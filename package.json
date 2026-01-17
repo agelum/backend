@@ -1,0 +1,88 @@
+{
+  "name": "@drizzle/reactive",
+  "version": "0.1.0",
+  "description": "Zero configuration, maximum intelligence. Reactive database library for Drizzle ORM with real-time synchronization.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js",
+      "require": "./dist/server.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.js"
+    },
+    "./trpc": {
+      "types": "./dist/trpc/index.d.ts",
+      "import": "./dist/trpc/index.js",
+      "require": "./dist/trpc/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "pnpm install && tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "types": "tsc --declaration --emitDeclarationOnly",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts"
+  },
+  "keywords": [
+    "drizzle",
+    "reactive",
+    "database",
+    "orm",
+    "real-time",
+    "cache",
+    "trpc",
+    "typescript"
+  ],
+  "author": "Agelum",
+  "license": "MIT",
+  "dependencies": {
+    "@repo/logger": "workspace:*",
+    "@trpc/server": "^10.45.0",
+    "@trpc/client": "^10.45.0",
+    "@trpc/react-query": "^10.45.0",
+    "@tanstack/react-query": "^4.36.1",
+    "drizzle-orm": "0.44.4",
+    "zod": "^3.22.0",
+    "react": "^18.2.0",
+    "superjson": "^2.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.55",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.5",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "peerDependencies": {
+    "@trpc/server": ">=10.0.0",
+    "@trpc/client": ">=10.0.0",
+    "react": ">=18.2.0",
+    "zod": ">=3.22.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agelum/drizzle-reactive"
+  },
+  "homepage": "https://github.com/agelum/drizzle-reactive#readme",
+  "bugs": {
+    "url": "https://github.com/agelum/drizzle-reactive/issues"
+  }
+}
