@@ -6,7 +6,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { ReactiveClientManager, createReactiveClientManager } from './manager'
 import type { ReactiveConfig, InvalidationEvent } from '../core/types'
-import { log } from '@repo/logger'
 
 // Global client manager instance
 let globalClientManager: ReactiveClientManager | null = null

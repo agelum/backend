@@ -1,5 +1,5 @@
 {
-  "name": "@drizzle/reactive",
+  "name": "@agelum/backend",
   "version": "0.1.0",
   "description": "Zero configuration, maximum intelligence. Reactive database library for Drizzle ORM with real-time synchronization.",
   "main": "dist/index.js",
@@ -51,7 +51,6 @@
   "author": "Agelum",
   "license": "MIT",
   "dependencies": {
-    "@repo/logger": "workspace:*",
     "@trpc/server": "^10.45.0",
     "@trpc/client": "^10.45.0",
     "@trpc/react-query": "^10.45.0",

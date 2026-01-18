@@ -27,7 +27,7 @@ pnpm add @drizzle/reactive drizzle-orm @trpc/server @trpc/client zod
 
 ### 1. Define Reactive Functions
 
-**Key Concept**: Reactive functions work both standalone (server-side) AND via tRPC. The `name` property is crucial for cache keys and tRPC procedures.
+**Key Concept**: Reactive functions work both standalone (server-side) AND via tRPC. The `name` property is crucial for cache keys and tRPC procedures. Use `db.db` to access the underlying Drizzle instance inside handlers.
 
 ```typescript
 // server/functions/users.ts
@@ -47,7 +47,7 @@ export const getUsers = defineReactiveFunction({
 
   handler: async (input, db) => {
     // Clean signature: (input, db)
-    return db.query.users.findMany({
+    return db.db.query.users.findMany({
       where: (users, { eq }) => eq(users.companyId, input.companyId),
       limit: input.limit,
     })
@@ -66,7 +66,7 @@ export const createUser = defineReactiveFunction({
   dependencies: ['user'],
 
   handler: async (input, db) => {
-    return db.insert(users).values(input).returning()
+    return db.db.insert(users).values(input).returning()
   },
 })
 
@@ -80,7 +80,7 @@ export const getUserProfile = defineReactiveFunction({
   dependencies: ['user', 'profile', 'preferences'],
 
   handler: async (input, db) => {
-    const user = await db.query.users.findFirst({
+    const user = await db.db.query.users.findFirst({
       where: (users, { eq }) => eq(users.id, input.userId),
       with: {
         profile: true,
@@ -130,7 +130,7 @@ import { getUsers } from '../functions/users'
 import { db } from '../db'
 
 export async function generateDailyStats() {
-  const companies = await db.query.companies.findMany()
+  const companies = await db.db.query.companies.findMany()
 
   for (const company of companies) {
     // ✅ Execute reactive function in background job
@@ -144,7 +144,7 @@ export async function generateDailyStats() {
 
 ### 3. tRPC Integration (Auto-Generated)
 
-**Key Feature**: The tRPC router automatically uses the function `name` as the procedure name.
+**Key Feature**: The tRPC router automatically uses the function `name` as the procedure name. Call `.build()` to get the final tRPC router instance.
 
 ```typescript
 // server/trpc/router.ts
@@ -156,6 +156,7 @@ export const appRouter = createReactiveRouter({ db })
   .addQuery(getUsers) // 🔄 Creates procedure: users.getAll
   .addMutation(createUser) // 🔄 Creates procedure: users.create
   .addQuery(getUserProfile) // 🔄 Creates procedure: users.profile.getDetailed
+  .build()
 
 // ✅ Auto-generated procedures from function names:
 // - users.getAll (query)
@@ -251,14 +252,15 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 
 const config = {
   relations: {
+    // Relations are table names (not column paths)
     // When user table changes, invalidate these queries
-    user: ['profile.userId', 'preferences.userId'],
+    user: ['profile', 'preferences'],
 
     // When profile table changes, invalidate these queries
-    profile: ['user.id'],
+    profile: ['user'],
 
     // When preferences table changes, invalidate these queries
-    preferences: ['user.id'],
+    preferences: ['user'],
   },
 }
 
@@ -273,9 +275,21 @@ import { createSSEStream } from '@drizzle/reactive/server'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const companyId = searchParams.get('companyId')!
+  const organizationId = searchParams.get('organizationId')!
 
-  return createSSEStream(companyId)
+  return createSSEStream(organizationId)
+}
+```
+
+```typescript
+// app/api/events/ack/route.ts
+// Required for reliable delivery: client acks invalidation events
+import { acknowledgeEvent } from '@drizzle/reactive/server'
+
+export async function POST(request: Request) {
+  const { eventId } = await request.json()
+  acknowledgeEvent(eventId)
+  return Response.json({ ok: true })
 }
 ```
 
@@ -310,6 +324,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 // Alternatively, you can create your own revalidateFn with createTrpcRevalidateFn
 // and pass it to ReactiveProvider if you need custom behavior.
 ```
+
+If you use `ReactiveProvider` directly, make sure to pass a `revalidateFn` for production; the default revalidator returns mock data.
 
 ### 4.1 Client Storage & Revalidation Details
 

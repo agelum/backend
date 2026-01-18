@@ -1,5 +1,5 @@
 /**
- * @drizzle/reactive - Zero configuration, maximum intelligence
+ * @agelum/backend - Zero configuration, maximum intelligence
  *
  * A reactive database library that provides automatic caching, real-time synchronization,
  * and intelligent invalidation for Drizzle ORM applications.
@@ -26,16 +26,25 @@
  */
 
 // Core exports
-export { createReactiveDb } from './core/driver'
-export { defineReactiveFunction } from './core/function'
-export type { ReactiveConfig, ReactiveDb } from './core/types'
+export { createReactiveDb } from "./core/driver";
+export { defineReactiveFunction } from "./core/function";
+export type {
+  ReactiveConfig,
+  ReactiveDb,
+} from "./core/types";
 
 // tRPC integration exports
-export { createReactiveRouter, ReactiveRouter } from './trpc/router'
-export type { ReactiveRouterInstance, BuiltReactiveRouter } from './trpc/types'
+export {
+  createReactiveRouter,
+  ReactiveRouter,
+} from "./trpc/router";
+export type {
+  ReactiveRouterInstance,
+  BuiltReactiveRouter,
+} from "./trpc/types";
 
 // Client-side exports - commented out to avoid server-side issues
-// Use @drizzle/reactive/client for client-side imports
+// Use @agelum/backend/client for client-side imports
 // export { ReactiveProvider } from './client/provider'
 // export { useReactive } from './client/hooks'
 
@@ -46,22 +55,22 @@ export type {
   InvalidationRule,
   CacheStrategy,
   RealtimeConfig,
-} from './config/schema'
+} from "./config/schema";
 
 // Provider exports
-export { RedisProvider } from './providers/redis'
-export { MemoryProvider } from './providers/memory'
-export { LocalStorageProvider } from './providers/localStorage'
+export { RedisProvider } from "./providers/redis";
+export { MemoryProvider } from "./providers/memory";
+export { LocalStorageProvider } from "./providers/localStorage";
 
 // Utility exports
-export { analyzeSql } from './core/analyzer'
+export { analyzeSql } from "./core/analyzer";
 export {
   createSSEStream,
   broadcastInvalidation,
   acknowledgeEvent,
   getSSEManager,
   SSEManager,
-} from './core/sse'
+} from "./core/sse";
 
 // Version
-export const version = '0.1.0'
+export const version = "0.1.0";

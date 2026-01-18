@@ -1,19 +1,29 @@
 /**
- * Client-only exports for @drizzle/reactive
- * Import this with: import { ... } from '@drizzle/reactive/client'
+ * Client-only exports for @agelum/backend
+ * Import this with: import { ... } from '@agelum/backend/client'
  */
 
 // Essential client-side exports
-export { ReactiveProvider, useReactiveContext } from './client/provider'
-export { useReactive, useReactiveQuery, initializeReactiveClient } from './client/hooks'
-export { ReactiveClientManager } from './client/manager'
-export { TrpcReactiveProvider, createTrpcRevalidateFn } from './client/trpc'
+export {
+  ReactiveProvider,
+  useReactiveContext,
+} from "./client/provider";
+export {
+  useReactive,
+  useReactiveQuery,
+  initializeReactiveClient,
+} from "./client/hooks";
+export { ReactiveClientManager } from "./client/manager";
+export {
+  TrpcReactiveProvider,
+  createTrpcRevalidateFn,
+} from "./client/trpc";
 
 // Storage providers for client
-export { LocalStorageProvider } from './providers/localStorage'
+export { LocalStorageProvider } from "./providers/localStorage";
 
 // Client types
-export type { UseReactiveResult } from './client/types'
+export type { UseReactiveResult } from "./client/types";
 
 // Version
-export const version = '0.1.0'
+export const version = "0.1.0";
