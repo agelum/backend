@@ -39,6 +39,8 @@ export default [
     ignores: [
       "dist/**/*",
       "node_modules/**/*",
+      "**/*.test.ts",
+      "**/*.spec.ts",
       "*.js",
       "*.mjs",
     ],

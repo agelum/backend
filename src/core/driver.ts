@@ -89,7 +89,7 @@ class ReactiveSqlDriver {
   private async interceptQuery(
     query: any,
     params: any[] = [],
-    originalExecute: Function
+    originalExecute: () => Promise<any>
   ): Promise<any> {
     // Extract SQL string from query object or use directly
     const sqlString = typeof query === 'string' ? query : query.sql || 'unknown'
@@ -122,7 +122,7 @@ class ReactiveSqlDriver {
   private async handleSelectQuery(
     analysis: SqlAnalysis,
     cacheKey: string,
-    originalExecute: Function
+    originalExecute: () => Promise<any>
   ): Promise<any> {
     // Try to get from cache first
     const cached = await this.cache.get(cacheKey)
@@ -153,7 +153,7 @@ class ReactiveSqlDriver {
 
   private async handleMutationQuery(
     analysis: SqlAnalysis,
-    originalExecute: Function
+    originalExecute: () => Promise<any>
   ): Promise<any> {
     console.log(
       `🔥 [ReactiveDB] MUTATION DETECTED: ${analysis.operation} on ${analysis.table} - This WILL trigger SSE broadcast`
