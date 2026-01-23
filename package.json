@@ -1,6 +1,6 @@
 {
   "name": "@agelum/backend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Zero configuration, maximum intelligence. Reactive database library for Drizzle ORM with real-time synchronization.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
