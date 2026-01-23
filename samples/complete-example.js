@@ -1,5 +1,5 @@
 /**
- * COMPLETE USAGE EXAMPLE - @agelum/reactive
+ * COMPLETE USAGE EXAMPLE - @agelum/backend
  *
  * This example demonstrates the three core usage patterns:
  * 1. Define reactive functions with explicit names
@@ -8,7 +8,7 @@
  */
 
 console.log(
-  "🚀 COMPLETE @agelum/reactive USAGE EXAMPLE\n",
+  "🚀 COMPLETE @agelum/backend USAGE EXAMPLE\n",
 );
 
 const {
