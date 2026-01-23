@@ -1,4 +1,4 @@
-# @drizzle/reactive
+# @agelum/backend
 
 **Zero configuration, maximum intelligence. Reactive everywhere with no boilerplate.**
 
@@ -20,7 +20,7 @@ A reactive database library that transforms any Drizzle + tRPC setup into a reac
 ### Installation
 
 ```bash
-pnpm add @drizzle/reactive drizzle-orm @trpc/server @trpc/client zod
+pnpm add @agelum/backend drizzle-orm @trpc/server @trpc/client zod
 ```
 
 ## 📖 Core Usage Patterns
@@ -31,65 +31,91 @@ pnpm add @drizzle/reactive drizzle-orm @trpc/server @trpc/client zod
 
 ```typescript
 // server/functions/users.ts
-import { defineReactiveFunction } from '@drizzle/reactive/server'
-import { z } from 'zod'
+import { defineReactiveFunction } from "@agelum/backend/server";
+import { z } from "zod";
 
 // 1. Define a reactive function with explicit name
-export const getUsers = defineReactiveFunction({
-  name: 'users.getAll', // 🔑 This becomes the cache key and tRPC procedure name
+export const getUsers =
+  defineReactiveFunction({
+    name: "users.getAll", // 🔑 This becomes the cache key and tRPC procedure name
 
-  input: z.object({
-    companyId: z.string(), // Generic, not hardcoded organizationId
-    limit: z.number().optional().default(50),
-  }),
+    input: z.object({
+      companyId: z.string(), // Generic, not hardcoded organizationId
+      limit: z
+        .number()
+        .optional()
+        .default(50),
+    }),
 
-  dependencies: ['user'], // What tables this function reads from
+    dependencies: ["user"], // What tables this function reads from
 
-  handler: async (input, db) => {
-    // Clean signature: (input, db)
-    return db.db.query.users.findMany({
-      where: (users, { eq }) => eq(users.companyId, input.companyId),
-      limit: input.limit,
-    })
-  },
-})
+    handler: async (input, db) => {
+      // Clean signature: (input, db)
+      return db.db.query.users.findMany(
+        {
+          where: (users, { eq }) =>
+            eq(
+              users.companyId,
+              input.companyId,
+            ),
+          limit: input.limit,
+        },
+      );
+    },
+  });
 
-export const createUser = defineReactiveFunction({
-  name: 'users.create',
+export const createUser =
+  defineReactiveFunction({
+    name: "users.create",
 
-  input: z.object({
-    name: z.string(),
-    email: z.string().email(),
-    companyId: z.string(),
-  }),
+    input: z.object({
+      name: z.string(),
+      email: z.string().email(),
+      companyId: z.string(),
+    }),
 
-  dependencies: ['user'],
+    dependencies: ["user"],
 
-  handler: async (input, db) => {
-    return db.db.insert(users).values(input).returning()
-  },
-})
+    handler: async (input, db) => {
+      return db.db
+        .insert(users)
+        .values(input)
+        .returning();
+    },
+  });
 
-export const getUserProfile = defineReactiveFunction({
-  name: 'users.profile.getDetailed', // 🏷️ Nested names work perfectly
+export const getUserProfile =
+  defineReactiveFunction({
+    name: "users.profile.getDetailed", // 🏷️ Nested names work perfectly
 
-  input: z.object({
-    userId: z.string(),
-  }),
+    input: z.object({
+      userId: z.string(),
+    }),
 
-  dependencies: ['user', 'profile', 'preferences'],
+    dependencies: [
+      "user",
+      "profile",
+      "preferences",
+    ],
 
-  handler: async (input, db) => {
-    const user = await db.db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, input.userId),
-      with: {
-        profile: true,
-        preferences: true,
-      },
-    })
-    return user
-  },
-})
+    handler: async (input, db) => {
+      const user =
+        await db.db.query.users.findFirst(
+          {
+            where: (users, { eq }) =>
+              eq(
+                users.id,
+                input.userId,
+              ),
+            with: {
+              profile: true,
+              preferences: true,
+            },
+          },
+        );
+      return user;
+    },
+  });
 ```
 
 ### 2. Server-Side Execution (Without tRPC)
@@ -98,46 +124,67 @@ export const getUserProfile = defineReactiveFunction({
 
 ```typescript
 // server/api/users/route.ts - Next.js API route
-import { getUsers, createUser } from '../functions/users'
-import { db } from '../db'
+import {
+  getUsers,
+  createUser,
+} from "../functions/users";
+import { db } from "../db";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const companyId = searchParams.get('companyId')!
+export async function GET(
+  request: Request,
+) {
+  const { searchParams } = new URL(
+    request.url,
+  );
+  const companyId = searchParams.get(
+    "companyId",
+  )!;
 
   // ✅ Execute reactive function directly on server
   const users = await getUsers.execute(
     { companyId, limit: 20 },
-    db // Your reactive database instance
-  )
+    db, // Your reactive database instance
+  );
 
-  return Response.json({ users })
+  return Response.json({ users });
 }
 
-export async function POST(request: Request) {
-  const body = await request.json()
+export async function POST(
+  request: Request,
+) {
+  const body = await request.json();
 
   // ✅ Execute reactive function directly on server
-  const newUser = await createUser.execute(body, db)
+  const newUser =
+    await createUser.execute(body, db);
 
-  return Response.json({ user: newUser })
+  return Response.json({
+    user: newUser,
+  });
 }
 ```
 
 ```typescript
 // server/jobs/daily-stats.ts - Background job
-import { getUsers } from '../functions/users'
-import { db } from '../db'
+import { getUsers } from "../functions/users";
+import { db } from "../db";
 
 export async function generateDailyStats() {
-  const companies = await db.db.query.companies.findMany()
+  const companies =
+    await db.db.query.companies.findMany();
 
   for (const company of companies) {
     // ✅ Execute reactive function in background job
-    const users = await getUsers.execute({ companyId: company.id }, db)
+    const users =
+      await getUsers.execute(
+        { companyId: company.id },
+        db,
+      );
 
     // Process stats...
-    console.log(`Company ${company.name} has ${users.length} users`)
+    console.log(
+      `Company ${company.name} has ${users.length} users`,
+    );
   }
 }
 ```
@@ -148,22 +195,28 @@ export async function generateDailyStats() {
 
 ```typescript
 // server/trpc/router.ts
-import { createReactiveRouter } from '@drizzle/reactive/server'
-import { getUsers, createUser, getUserProfile } from '../functions/users'
-import { db } from '../db'
+import { createReactiveRouter } from "@agelum/backend/server";
+import {
+  getUsers,
+  createUser,
+  getUserProfile,
+} from "../functions/users";
+import { db } from "../db";
 
-export const appRouter = createReactiveRouter({ db })
-  .addQuery(getUsers) // 🔄 Creates procedure: users.getAll
-  .addMutation(createUser) // 🔄 Creates procedure: users.create
-  .addQuery(getUserProfile) // 🔄 Creates procedure: users.profile.getDetailed
-  .build()
+export const appRouter =
+  createReactiveRouter({ db })
+    .addQuery(getUsers) // 🔄 Creates procedure: users.getAll
+    .addMutation(createUser) // 🔄 Creates procedure: users.create
+    .addQuery(getUserProfile) // 🔄 Creates procedure: users.profile.getDetailed
+    .build();
 
 // ✅ Auto-generated procedures from function names:
 // - users.getAll (query)
 // - users.create (mutation)
 // - users.profile.getDetailed (query)
 
-export type AppRouter = typeof appRouter
+export type AppRouter =
+  typeof appRouter;
 ```
 
 ### 4. Client-Side Usage (React Hooks)
@@ -172,7 +225,7 @@ export type AppRouter = typeof appRouter
 
 ```typescript
 // client/components/UserList.tsx
-import { useReactive } from '@drizzle/reactive/client'
+import { useReactive } from '@agelum/backend/client'
 
 function UserList({ companyId }: { companyId: string }) {
   // ✅ Uses the function name automatically: 'users.getAll'
@@ -247,49 +300,62 @@ function CreateUserForm({ companyId }: { companyId: string }) {
 
 ```typescript
 // server/db.ts
-import { createReactiveDb } from '@drizzle/reactive/server'
-import { drizzle } from 'drizzle-orm/postgres-js'
+import { createReactiveDb } from "@agelum/backend/server";
+import { drizzle } from "drizzle-orm/postgres-js";
 
 const config = {
   relations: {
     // Relations are table names (not column paths)
     // When user table changes, invalidate these queries
-    user: ['profile', 'preferences'],
+    user: ["profile", "preferences"],
 
     // When profile table changes, invalidate these queries
-    profile: ['user'],
+    profile: ["user"],
 
     // When preferences table changes, invalidate these queries
-    preferences: ['user'],
+    preferences: ["user"],
   },
-}
+};
 
-export const db = createReactiveDb(drizzle(pool), config)
+export const db = createReactiveDb(
+  drizzle(pool),
+  config,
+);
 ```
 
 ### 2. SSE Endpoint (Next.js)
 
 ```typescript
 // app/api/events/route.ts
-import { createSSEStream } from '@drizzle/reactive/server'
+import { createSSEStream } from "@agelum/backend/server";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const organizationId = searchParams.get('organizationId')!
+export async function GET(
+  request: Request,
+) {
+  const { searchParams } = new URL(
+    request.url,
+  );
+  const organizationId =
+    searchParams.get("organizationId")!;
 
-  return createSSEStream(organizationId)
+  return createSSEStream(
+    organizationId,
+  );
 }
 ```
 
 ```typescript
 // app/api/events/ack/route.ts
 // Required for reliable delivery: client acks invalidation events
-import { acknowledgeEvent } from '@drizzle/reactive/server'
+import { acknowledgeEvent } from "@agelum/backend/server";
 
-export async function POST(request: Request) {
-  const { eventId } = await request.json()
-  acknowledgeEvent(eventId)
-  return Response.json({ ok: true })
+export async function POST(
+  request: Request,
+) {
+  const { eventId } =
+    await request.json();
+  acknowledgeEvent(eventId);
+  return Response.json({ ok: true });
 }
 ```
 
@@ -299,7 +365,7 @@ export async function POST(request: Request) {
 // client/providers/ReactiveProvider.tsx
 // Recommended: use the built-in TrpcReactiveProvider to wire revalidation generically
 'use client'
-import { TrpcReactiveProvider } from '@drizzle/reactive/client'
+import { TrpcReactiveProvider } from '@agelum/backend/client'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '../server/trpc'
 import { reactiveRelations } from '@your-db-package/reactive-config'
@@ -332,7 +398,7 @@ If you use `ReactiveProvider` directly, make sure to pass a `revalidateFn` for p
 - The hook composes cache keys as `name::JSON(input)`.
 - LocalStorage is sharded per query to avoid large single entries:
   - Index per organization: `reactive_registry_<orgId>` stores metadata (last revalidated, last server change, connection status).
-  - Per-query entry key: `@drizzle/reactive:entry:<orgId>:<hash>` stores `{ name, input, queryKey, data }`.
+  - Per-query entry key: `@agelum/backend:entry:<orgId>:<hash>` stores `{ name, input, queryKey, data }`.
 - On initial render, cached data (if present) is shown immediately; background revalidation respects a minimum time window to avoid thrashing on quick navigations/refreshes.
 - Errors during revalidation do not overwrite existing cache (no-write-on-error), keeping previously known-good data.
 - Real-time invalidation uses SSE with client acknowledgments and retry; no heartbeats are sent.
@@ -345,7 +411,7 @@ If you use `ReactiveProvider` directly, make sure to pass a `revalidateFn` for p
 
 ## 🎯 Key Benefits Over Manual Approach
 
-| Feature                 | Manual tRPC                        | @drizzle/reactive               |
+| Feature                 | Manual tRPC                        | @agelum/backend                 |
 | ----------------------- | ---------------------------------- | ------------------------------- |
 | **Function Definition** | Separate function + tRPC procedure | Single `defineReactiveFunction` |
 | **Cache Keys**          | Manual generation                  | Auto from function name         |
@@ -360,9 +426,14 @@ If you use `ReactiveProvider` directly, make sure to pass a `revalidateFn` for p
 
 ```typescript
 // If you need different tRPC names than function names
-const router = createReactiveRouter({ db })
-  .addQueryWithName(getUsers, 'getAllUsers') // Custom name
-  .addQuery(getUserProfile) // Uses function name: 'users.profile.getDetailed'
+const router = createReactiveRouter({
+  db,
+})
+  .addQueryWithName(
+    getUsers,
+    "getAllUsers",
+  ) // Custom name
+  .addQuery(getUserProfile); // Uses function name: 'users.profile.getDetailed'
 ```
 
 ### Background Revalidation
@@ -371,9 +442,9 @@ const router = createReactiveRouter({ db })
 // client/hooks.ts
 function MyComponent() {
   useReactivePriorities([
-    'users.getAll', // High priority (visible)
-    'users.profile.getDetailed', // Medium priority (likely next)
-  ])
+    "users.getAll", // High priority (visible)
+    "users.profile.getDetailed", // Medium priority (likely next)
+  ]);
 
   // Component content...
 }
