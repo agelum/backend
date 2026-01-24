@@ -58,6 +58,7 @@ export const reactiveFunctionConfigSchema = z.object({
   input: z.any(), // Zod schema
   dependencies: z.array(z.string()),
   invalidateWhen: z.record(z.string(), z.function()).optional(),
+  cacheEnabled: z.boolean().optional(),
   handler: z.function(),
 })
 

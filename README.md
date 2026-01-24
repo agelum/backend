@@ -128,8 +128,8 @@ export const getUsers =
       companyId: z.string(),
     }),
     dependencies: ["user"],
+    cacheEnabled: true,
     cache: {
-      enabled: true,
       ttl: 300,
       key: (input) =>
         `users.getAll:${JSON.stringify(input)}`,
@@ -147,6 +147,8 @@ export const getUsers =
     },
   });
 ```
+
+Cache is opt-in per function via `cacheEnabled: true` or `cache.enabled: true`.
 
 #### Typing Notes
 

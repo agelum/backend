@@ -40,6 +40,9 @@ export interface ReactiveFunctionConfig<
     ) => boolean
   >;
 
+  /** Optional: Enable cache for this function */
+  cacheEnabled?: boolean;
+
   /** Cache configuration */
   cache?: {
     enabled?: boolean;
@@ -148,13 +151,18 @@ export function defineReactiveFunction<
     );
   }
 
+  const cacheEnabled =
+    config.cacheEnabled ??
+    config.cache?.enabled ??
+    false;
+
   // Default cache configuration
   const cacheConfig = {
-    enabled: true,
     ttl: 300, // 5 minutes default
     key: (input: TInput) =>
       `${config.name}:${JSON.stringify(input)}`,
     ...config.cache,
+    enabled: cacheEnabled,
   };
 
   /**

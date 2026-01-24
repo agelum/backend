@@ -100,6 +100,22 @@ export const getUserProfile = defineReactiveFunction({
 });
 ```
 
+**Cache per Function (opt-in):**
+```typescript
+export const getUsers = defineReactiveFunction({
+  name: "users.getAll",
+  input: z.object({ companyId: z.string() }),
+  dependencies: ["user"],
+  cacheEnabled: true,
+  handler: async ({ input, db }) => {
+    return db.db.query.users.findMany({
+      where: (users, { eq }) => eq(users.companyId, input.companyId),
+    });
+  },
+});
+```
+Cache is opt-in per function via `cacheEnabled: true` or `cache.enabled: true`.
+
 ### 2. Server-Side Execution (Without tRPC)
 
 Use `.execute(input, db)` for API routes, background jobs, webhooks, etc:
