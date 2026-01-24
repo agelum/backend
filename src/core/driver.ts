@@ -147,7 +147,6 @@ class ReactiveSqlDriver<
       "all",
       "get",
       "run",
-      "values",
     ];
     execMethods.forEach((method) => {
       if (queryBuilder[method]) {
