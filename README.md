@@ -27,7 +27,7 @@ pnpm add @agelum/backend drizzle-orm @trpc/server @trpc/client zod
 
 ### 1. Define Reactive Functions
 
-**Key Concept**: Reactive functions work both standalone (server-side) AND via tRPC. The `name` property is crucial for cache keys and tRPC procedures. Use `db.db` to access the underlying Drizzle instance inside handlers.
+**Key Concept**: Reactive functions work both standalone (server-side) AND via tRPC. The `name` property is crucial for cache keys and tRPC procedures. Handlers receive `{ input, db }` and you can use `db.db` to access the underlying Drizzle instance inside handlers.
 
 ```typescript
 // server/functions/users.ts
@@ -49,8 +49,8 @@ export const getUsers =
 
     dependencies: ["user"], // What tables this function reads from
 
-    handler: async (input, db) => {
-      // Clean signature: (input, db)
+    handler: async ({ input, db }) => {
+      // Clean signature: ({ input, db })
       return db.db.query.users.findMany(
         {
           where: (users, { eq }) =>
@@ -76,7 +76,7 @@ export const createUser =
 
     dependencies: ["user"],
 
-    handler: async (input, db) => {
+    handler: async ({ input, db }) => {
       return db.db
         .insert(users)
         .values(input)
@@ -98,7 +98,7 @@ export const getUserProfile =
       "preferences",
     ],
 
-    handler: async (input, db) => {
+    handler: async ({ input, db }) => {
       const user =
         await db.db.query.users.findFirst(
           {
@@ -116,6 +116,34 @@ export const getUserProfile =
       return user;
     },
   });
+```
+
+#### Typing Notes
+
+If you want explicit handler typing, use `ReactiveFunctionContext<TInput>` with a Zod-inferred input type:
+
+```typescript
+import type { ReactiveFunctionContext } from "@agelum/backend/server";
+import { z } from "zod";
+
+const getUsersInput = z.object({
+  companyId: z.string(),
+  limit: z.number().optional(),
+});
+
+type GetUsersInput = z.infer<typeof getUsersInput>;
+
+export const getUsers = defineReactiveFunction({
+  name: "users.getAll",
+  input: getUsersInput,
+  dependencies: ["user"],
+  handler: async ({ input, db }: ReactiveFunctionContext<GetUsersInput>) => {
+    return db.db.query.users.findMany({
+      where: (users, { eq }) => eq(users.companyId, input.companyId),
+      limit: input.limit ?? 50,
+    });
+  },
+});
 ```
 
 ### 2. Server-Side Execution (Without tRPC)
