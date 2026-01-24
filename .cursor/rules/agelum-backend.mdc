@@ -1,0 +1,380 @@
+---
+description: Guide for using @agelum/backend - a reactive database library for Drizzle ORM with tRPC integration
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: false
+---
+
+# @agelum/backend Library Usage Guide
+
+This document provides guidance on using the `@agelum/backend` library - a reactive database library that transforms Drizzle + tRPC setups into reactive, real-time systems with minimal configuration.
+
+## Overview
+
+`@agelum/backend` provides:
+- **Zero Configuration**: Single config file with table relations
+- **Instant Cache**: Shows cached data immediately, revalidates smartly
+- **Real-time Sync**: Built-in Server-Sent Events (SSE) for cache invalidation
+- **Smart Invalidation**: Only invalidates relevant queries based on relations
+- **Type Safety**: 100% automatic type safety with tRPC integration
+
+## Import Paths
+
+The library has three main entry points. Always use the correct import path:
+
+```typescript
+// Server-side only (Node.js, API routes, background jobs)
+import {
+  createReactiveDb,
+  defineReactiveFunction,
+  createReactiveRouter,
+  createSSEStream,
+  broadcastInvalidation,
+  acknowledgeEvent,
+  RedisProvider,
+  MemoryProvider,
+} from "@agelum/backend/server";
+
+// Client-side only (React components)
+import {
+  ReactiveProvider,
+  TrpcReactiveProvider,
+  useReactive,
+  useReactiveQuery,
+  useReactiveConnection,
+  initializeReactiveClient,
+  LocalStorageProvider,
+} from "@agelum/backend/client";
+
+// tRPC-specific utilities
+import { ... } from "@agelum/backend/trpc";
+```
+
+## Core Concepts
+
+### 1. Reactive Functions
+
+Reactive functions are the building blocks. They work both standalone (server-side) AND via tRPC.
+
+**Key Properties:**
+- `name`: Becomes the cache key AND tRPC procedure name (e.g., `"users.getAll"`)
+- `input`: Zod schema for input validation
+- `dependencies`: Array of table names this function reads from (for cache invalidation)
+- `handler`: Receives `{ input, db }` context - use `db.db` to access the underlying Drizzle instance
+
+```typescript
+import { defineReactiveFunction } from "@agelum/backend/server";
+import { z } from "zod";
+
+export const getUsers = defineReactiveFunction({
+  name: "users.getAll",  // 🔑 Cache key + tRPC procedure name
+
+  input: z.object({
+    companyId: z.string(),
+    limit: z.number().optional().default(50),
+  }),
+
+  dependencies: ["user"],  // Tables this function reads from
+
+  handler: async ({ input, db }) => {
+    // Use db.db to access the Drizzle instance
+    return db.db.query.users.findMany({
+      where: (users, { eq }) => eq(users.companyId, input.companyId),
+      limit: input.limit,
+    });
+  },
+});
+```
+
+**Nested Names Work:**
+```typescript
+export const getUserProfile = defineReactiveFunction({
+  name: "users.profile.getDetailed",  // Creates nested tRPC procedure
+  input: z.object({ userId: z.string() }),
+  dependencies: ["user", "profile", "preferences"],
+  handler: async ({ input, db }) => {
+    return db.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, input.userId),
+      with: { profile: true, preferences: true },
+    });
+  },
+});
+```
+
+### 2. Server-Side Execution (Without tRPC)
+
+Use `.execute(input, db)` for API routes, background jobs, webhooks, etc:
+
+```typescript
+import { getUsers, createUser } from "../functions/users";
+import { db } from "../db";
+
+// In an API route
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const companyId = searchParams.get("companyId")!;
+
+  // ✅ Direct server-side execution
+  const users = await getUsers.execute({ companyId, limit: 20 }, db);
+  return Response.json({ users });
+}
+
+// In a background job
+export async function generateDailyStats() {
+  const companies = await db.db.query.companies.findMany();
+  for (const company of companies) {
+    const users = await getUsers.execute({ companyId: company.id }, db);
+    // Process stats...
+  }
+}
+```
+
+### 3. tRPC Router Integration
+
+Create tRPC routers that automatically use function names as procedure names:
+
+```typescript
+import { createReactiveRouter } from "@agelum/backend/server";
+import { getUsers, createUser, getUserProfile } from "../functions/users";
+import { db } from "../db";
+
+export const appRouter = createReactiveRouter({ db })
+  .addQuery(getUsers)           // Creates: users.getAll (query)
+  .addMutation(createUser)      // Creates: users.create (mutation)
+  .addQuery(getUserProfile)     // Creates: users.profile.getDetailed (query)
+  .build();                     // ⚠️ Don't forget .build()!
+
+export type AppRouter = typeof appRouter;
+```
+
+**Custom Names (Optional Override):**
+```typescript
+const router = createReactiveRouter({ db })
+  .addQueryWithName(getUsers, "getAllUsers")  // Override name
+  .addQuery(getUserProfile);                   // Uses function name
+```
+
+### 4. Database Configuration
+
+```typescript
+import { createReactiveDb } from "@agelum/backend/server";
+import { drizzle } from "drizzle-orm/postgres-js";
+
+const config = {
+  relations: {
+    // When these tables change, invalidate related queries
+    user: ["profile", "preferences"],
+    profile: ["user"],
+    preferences: ["user"],
+  },
+};
+
+export const db = createReactiveDb(drizzle(pool), config);
+```
+
+### 5. Client-Side Hooks
+
+```typescript
+import { useReactive } from "@agelum/backend/client";
+
+function UserList({ companyId }: { companyId: string }) {
+  // Uses the function name as the query key
+  const { data: users, isStale, isLoading, error, refetch } = useReactive(
+    "users.getAll",
+    { companyId, limit: 20 }
+  );
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {isStale && <div className="text-orange-500">Syncing...</div>}
+      {users?.map((user) => <UserCard key={user.id} user={user} />)}
+    </div>
+  );
+}
+```
+
+**Available Hooks:**
+- `useReactive(queryKey, input)` - Main hook for reactive data access
+- `useReactiveQuery(queryKey)` - Manual queries with `.run(variables)`
+- `useReactiveConnection()` - Get SSE connection status
+- `useReactiveStats()` - Session statistics
+- `useReactiveRefresh()` - Manual cache refresh
+
+### 6. SSE Setup (Next.js Example)
+
+```typescript
+// app/api/events/route.ts
+import { createSSEStream } from "@agelum/backend/server";
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const organizationId = searchParams.get("organizationId")!;
+  return createSSEStream(organizationId);
+}
+
+// app/api/events/ack/route.ts (Required for reliable delivery)
+import { acknowledgeEvent } from "@agelum/backend/server";
+
+export async function POST(request: Request) {
+  const { eventId } = await request.json();
+  acknowledgeEvent(eventId);
+  return Response.json({ ok: true });
+}
+```
+
+### 7. Client Provider Setup
+
+```typescript
+"use client";
+import { TrpcReactiveProvider } from "@agelum/backend/client";
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "../server/trpc";
+
+const trpcClient = createTRPCProxyClient<AppRouter>({
+  links: [httpBatchLink({ url: "/api/trpc" })],
+});
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  const organizationId = "your-organization-id";
+  return (
+    <TrpcReactiveProvider
+      organizationId={organizationId}
+      relations={reactiveRelations}
+      trpcClient={trpcClient}
+    >
+      {children}
+    </TrpcReactiveProvider>
+  );
+}
+```
+
+## Cache Keys
+
+Cache keys are automatically composed as `name::JSON(input)`:
+- `users.getAll::{"companyId":"123","limit":50}`
+- `users.profile.getDetailed::{"userId":"456"}`
+
+Access cache key programmatically:
+```typescript
+const cacheKey = getUsers.getCacheKey({ companyId: "test", limit: 50 });
+// Returns: "users.getAll:{"companyId":"test","limit":50}"
+```
+
+## Function Metadata
+
+```typescript
+const metadata = getUsers.getMetadata();
+// Returns: {
+//   name: "users.getAll",
+//   dependencies: ["user"],
+//   cacheEnabled: true,
+//   cacheTtl: 300,
+//   hasInvalidationRules: false
+// }
+```
+
+## Type-Safe Handler Context
+
+For explicit typing in handlers:
+
+```typescript
+import type { ReactiveFunctionContext } from "@agelum/backend/server";
+import { z } from "zod";
+
+const getUsersInput = z.object({
+  companyId: z.string(),
+  limit: z.number().optional(),
+});
+
+type GetUsersInput = z.infer<typeof getUsersInput>;
+
+export const getUsers = defineReactiveFunction({
+  name: "users.getAll",
+  input: getUsersInput,
+  dependencies: ["user"],
+  handler: async ({ input, db }: ReactiveFunctionContext<GetUsersInput>) => {
+    return db.db.query.users.findMany({
+      where: (users, { eq }) => eq(users.companyId, input.companyId),
+      limit: input.limit ?? 50,
+    });
+  },
+});
+```
+
+## Common Patterns
+
+### Mutations with Automatic Cache Invalidation
+
+```typescript
+// Server: Define mutation
+export const createUser = defineReactiveFunction({
+  name: "users.create",
+  input: z.object({
+    name: z.string(),
+    email: z.string().email(),
+    companyId: z.string(),
+  }),
+  dependencies: ["user"],
+  handler: async ({ input, db }) => {
+    return db.db.insert(users).values(input).returning();
+  },
+});
+
+// Client: Use mutation (cache invalidation is automatic via SSE)
+import { trpc } from "../trpc";
+
+function CreateUserForm({ companyId }: { companyId: string }) {
+  const createUserMutation = trpc.users.create.useMutation({
+    onSuccess: () => {
+      // ✅ Automatic cache invalidation happens via SSE
+      // No manual invalidation needed!
+    },
+  });
+
+  const handleSubmit = (data: FormData) => {
+    createUserMutation.mutate({
+      name: data.get("name") as string,
+      email: data.get("email") as string,
+      companyId,
+    });
+  };
+
+  return <form onSubmit={handleSubmit}>{/* ... */}</form>;
+}
+```
+
+### Priority Hints for Better UX
+
+```typescript
+import { useReactivePriorities } from "@agelum/backend/client";
+
+function MyComponent() {
+  useReactivePriorities([
+    "users.getAll",              // High priority (visible)
+    "users.profile.getDetailed", // Medium priority (likely next)
+  ]);
+
+  // Component content...
+}
+```
+
+## Important Rules
+
+1. **Always use `db.db` inside handlers** to access the Drizzle instance
+2. **Call `.build()`** when creating tRPC routers
+3. **Use correct import paths**: `/server` for server, `/client` for React
+4. **Include all dependent tables** in the `dependencies` array
+5. **Function names with dots** create nested tRPC procedures (e.g., `"users.profile.getDetailed"`)
+6. **Cache keys include serialized input** - same name + different input = different cache entry
+
+## Troubleshooting
+
+### "Reactive client not initialized"
+Call `initializeReactiveClient()` or wrap your app in `TrpcReactiveProvider`/`ReactiveProvider`.
+
+### Cache not invalidating
+Check that the `dependencies` array includes all tables that affect the query results.
+
+### tRPC procedure not found
+Ensure you called `.build()` on the reactive router and the function name matches.
