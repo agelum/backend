@@ -171,6 +171,30 @@ const config = {
 export const db = createReactiveDb(drizzle(pool), config);
 ```
 
+### 4.1 Server Cache (Redis or Memory)
+
+```typescript
+const config = {
+  relations: {
+    user: ["profile", "preferences"],
+    profile: ["user"],
+    preferences: ["user"],
+  },
+  cache: {
+    server: {
+      provider: "redis",
+      redis: {
+        url: process.env.REDIS_URL,
+      },
+    },
+  },
+};
+
+export const db = createReactiveDb(drizzle(pool), config);
+```
+
+You can also pass an existing Redis client via `cache.server.redis.client`.
+
 ### 5. Client-Side Hooks
 
 ```typescript
@@ -251,15 +275,17 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
 ## Cache Keys
 
-Cache keys are automatically composed as `name::JSON(input)`:
+Client cache keys are automatically composed as `name::JSON(input)`:
 - `users.getAll::{"companyId":"123","limit":50}`
 - `users.profile.getDetailed::{"userId":"456"}`
+
+Server cache keys for reactive functions default to `name:JSON(input)` and can be customized with `cache.key`.
 
 Access cache key programmatically:
 ```typescript
 const cacheKey = getUsers.getCacheKey({ companyId: "test", limit: 50 });
-// Returns: "users.getAll:{"companyId":"test","limit":50}"
 ```
+Example value: `users.getAll:{"companyId":"test","limit":50}`
 
 ## Function Metadata
 

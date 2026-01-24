@@ -9,6 +9,12 @@ export const cacheConfigSchema = z
     server: z
       .object({
         provider: z.enum(['redis', 'memory']).optional().default('memory'),
+        redis: z
+          .object({
+            url: z.string().optional(),
+            client: z.any().optional(),
+          })
+          .optional(),
       })
       .optional(),
     client: z

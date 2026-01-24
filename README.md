@@ -118,6 +118,36 @@ export const getUserProfile =
   });
 ```
 
+**Optional Cache Settings (per function)**:
+
+```typescript
+export const getUsers =
+  defineReactiveFunction({
+    name: "users.getAll",
+    input: z.object({
+      companyId: z.string(),
+    }),
+    dependencies: ["user"],
+    cache: {
+      enabled: true,
+      ttl: 300,
+      key: (input) =>
+        `users.getAll:${JSON.stringify(input)}`,
+    },
+    handler: async ({ input, db }) => {
+      return db.db.query.users.findMany(
+        {
+          where: (users, { eq }) =>
+            eq(
+              users.companyId,
+              input.companyId,
+            ),
+        },
+      );
+    },
+  });
+```
+
 #### Typing Notes
 
 If you want explicit handler typing, use `ReactiveFunctionContext<TInput>` with a Zod-inferred input type:
@@ -131,19 +161,31 @@ const getUsersInput = z.object({
   limit: z.number().optional(),
 });
 
-type GetUsersInput = z.infer<typeof getUsersInput>;
+type GetUsersInput = z.infer<
+  typeof getUsersInput
+>;
 
-export const getUsers = defineReactiveFunction({
-  name: "users.getAll",
-  input: getUsersInput,
-  dependencies: ["user"],
-  handler: async ({ input, db }: ReactiveFunctionContext<GetUsersInput>) => {
-    return db.db.query.users.findMany({
-      where: (users, { eq }) => eq(users.companyId, input.companyId),
-      limit: input.limit ?? 50,
-    });
-  },
-});
+export const getUsers =
+  defineReactiveFunction({
+    name: "users.getAll",
+    input: getUsersInput,
+    dependencies: ["user"],
+    handler: async ({
+      input,
+      db,
+    }: ReactiveFunctionContext<GetUsersInput>) => {
+      return db.db.query.users.findMany(
+        {
+          where: (users, { eq }) =>
+            eq(
+              users.companyId,
+              input.companyId,
+            ),
+          limit: input.limit ?? 50,
+        },
+      );
+    },
+  });
 ```
 
 ### 2. Server-Side Execution (Without tRPC)
@@ -351,7 +393,34 @@ export const db = createReactiveDb(
 );
 ```
 
-### 2. SSE Endpoint (Next.js)
+### 2. Server Cache (Redis or Memory)
+
+```typescript
+const config = {
+  relations: {
+    user: ["profile", "preferences"],
+    profile: ["user"],
+    preferences: ["user"],
+  },
+  cache: {
+    server: {
+      provider: "redis",
+      redis: {
+        url: process.env.REDIS_URL,
+      },
+    },
+  },
+};
+
+export const db = createReactiveDb(
+  drizzle(pool),
+  config,
+);
+```
+
+You can also pass an existing Redis client via `cache.server.redis.client`.
+
+### 3. SSE Endpoint (Next.js)
 
 ```typescript
 // app/api/events/route.ts
@@ -387,7 +456,7 @@ export async function POST(
 }
 ```
 
-### 3. Client Setup
+### 4. Client Setup
 
 ```typescript
 // client/providers/ReactiveProvider.tsx
@@ -430,6 +499,26 @@ If you use `ReactiveProvider` directly, make sure to pass a `revalidateFn` for p
 - On initial render, cached data (if present) is shown immediately; background revalidation respects a minimum time window to avoid thrashing on quick navigations/refreshes.
 - Errors during revalidation do not overwrite existing cache (no-write-on-error), keeping previously known-good data.
 - Real-time invalidation uses SSE with client acknowledgments and retry; no heartbeats are sent.
+
+## Cache Keys
+
+Client cache keys are automatically composed as `name::JSON(input)`:
+
+- `users.getAll::{"companyId":"123","limit":50}`
+- `users.profile.getDetailed::{"userId":"456"}`
+
+Server cache keys for reactive functions default to `name:JSON(input)` and can be customized with `cache.key`.
+
+Access cache key programmatically:
+
+```typescript
+const cacheKey = getUsers.getCacheKey({
+  companyId: "test",
+  limit: 50,
+});
+```
+
+Example value: `users.getAll:{"companyId":"test","limit":50}`
 
 ### 4.2 Multi-tenant Tips (Optional)
 
@@ -483,7 +572,7 @@ function MyComponent() {
 1. **Function Definition**: `defineReactiveFunction` creates functions that work both server-side and via tRPC
 2. **Name-Based Mapping**: The `name` property becomes both the cache key and tRPC procedure name
 3. **Auto-Generated Router**: `createReactiveRouter` automatically creates tRPC procedures from functions
-4. **Smart Caching**: Cache keys are generated from function names and inputs. The React hook composes a key as `name::JSON(input)` internally to uniquely cache and revalidate by input.
+4. **Smart Caching**: Server cache uses the configured provider (memory or Redis) and function dependencies to invalidate cached results. The React hook composes a key as `name::JSON(input)` internally to uniquely cache and revalidate by input.
 5. **Real-time Updates**: SSE automatically invalidates affected queries when data changes. No heartbeats are sent; reliability is ensured via client acknowledgments and retry.
 6. **Session Recovery**: Smart revalidation on page load handles offline scenarios and avoids thrashing with a minimum revalidation window.
 
