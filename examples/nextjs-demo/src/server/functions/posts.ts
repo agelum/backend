@@ -48,3 +48,47 @@ export const createPost = defineReactiveFunction({
     return result[0];
   },
 });
+
+/**
+ * Update a post title
+ */
+export const updatePostTitle = defineReactiveFunction({
+  name: "posts.updateTitle",
+
+  input: z.object({
+    id: z.string().uuid(),
+    title: z.string().min(1),
+  }),
+
+  dependencies: ["posts"],
+
+  handler: async ({ input, db }) => {
+    const result = await db.db
+      .update(posts)
+      .set({ title: input.title })
+      .where(eq(posts.id, input.id))
+      .returning();
+    return result[0];
+  },
+});
+
+/**
+ * Delete a post by id
+ */
+export const deletePost = defineReactiveFunction({
+  name: "posts.delete",
+
+  input: z.object({
+    id: z.string().uuid(),
+  }),
+
+  dependencies: ["posts"],
+
+  handler: async ({ input, db }) => {
+    const result = await db.db
+      .delete(posts)
+      .where(eq(posts.id, input.id))
+      .returning();
+    return result[0];
+  },
+});

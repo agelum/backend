@@ -2,6 +2,7 @@ import { UserList } from "@/components/UserList";
 import { PostList } from "@/components/PostList";
 import { CreateUserForm } from "@/components/CreateUserForm";
 import { CreatePostForm } from "@/components/CreatePostForm";
+import { MutationPlayground } from "@/components/MutationPlayground";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 
 const ORGANIZATION_ID = process.env.DEMO_ORGANIZATION_ID || "demo-org-123";
@@ -78,6 +79,7 @@ export default function Home() {
           <div className="lg:col-span-1 space-y-6">
             <CreateUserForm organizationId={ORGANIZATION_ID} />
             <CreatePostForm organizationId={ORGANIZATION_ID} />
+            <MutationPlayground organizationId={ORGANIZATION_ID} />
           </div>
 
           {/* Right Column - Data Lists */}

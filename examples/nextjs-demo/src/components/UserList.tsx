@@ -1,6 +1,7 @@
 "use client";
 
 import { useReactive } from "@agelum/backend/client";
+import { trpcClient } from "@/client/trpc";
 
 interface UserListProps {
   organizationId: string;
@@ -11,6 +12,31 @@ export function UserList({ organizationId }: UserListProps) {
     "users.getAll",
     { organizationId, limit: 50 }
   );
+
+  const handleRename = async (user: any) => {
+    const nextName = window.prompt("New user name", user.name);
+    if (!nextName || nextName === user.name) return;
+    try {
+      await trpcClient.users.updateName.mutate({
+        id: user.id,
+        name: nextName,
+      });
+    } catch (err: any) {
+      window.alert(err.message || "Failed to rename user");
+    }
+  };
+
+  const handleDelete = async (user: any) => {
+    const shouldDelete = window.confirm(
+      `Delete ${user.name}? This will also remove their posts.`
+    );
+    if (!shouldDelete) return;
+    try {
+      await trpcClient.users.delete.mutate({ id: user.id });
+    } catch (err: any) {
+      window.alert(err.message || "Failed to delete user");
+    }
+  };
 
   if (isLoading && !users) {
     return (
@@ -63,8 +89,24 @@ export function UserList({ organizationId }: UserListProps) {
                   <p className="font-medium text-gray-900">{user.name}</p>
                   <p className="text-sm text-gray-500">{user.email}</p>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                <div className="text-right">
+                  <div className="text-xs text-gray-400">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 justify-end text-xs">
+                    <button
+                      onClick={() => handleRename(user)}
+                      className="text-blue-500 hover:text-blue-600"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

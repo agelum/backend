@@ -1,6 +1,7 @@
 "use client";
 
 import { useReactive } from "@agelum/backend/client";
+import { trpcClient } from "@/client/trpc";
 
 interface PostListProps {
   organizationId: string;
@@ -11,6 +12,29 @@ export function PostList({ organizationId }: PostListProps) {
     "posts.getAll",
     { organizationId, limit: 50 }
   );
+
+  const handleRename = async (post: any) => {
+    const nextTitle = window.prompt("New post title", post.title);
+    if (!nextTitle || nextTitle === post.title) return;
+    try {
+      await trpcClient.posts.updateTitle.mutate({
+        id: post.id,
+        title: nextTitle,
+      });
+    } catch (err: any) {
+      window.alert(err.message || "Failed to update post");
+    }
+  };
+
+  const handleDelete = async (post: any) => {
+    const shouldDelete = window.confirm(`Delete "${post.title}"?`);
+    if (!shouldDelete) return;
+    try {
+      await trpcClient.posts.delete.mutate({ id: post.id });
+    } catch (err: any) {
+      window.alert(err.message || "Failed to delete post");
+    }
+  };
 
   if (isLoading && !posts) {
     return (
@@ -60,8 +84,24 @@ export function PostList({ organizationId }: PostListProps) {
             <div key={post.id} className="px-4 py-4 hover:bg-gray-50">
               <div className="flex items-start justify-between mb-2">
                 <h3 className="font-semibold text-gray-900">{post.title}</h3>
-                <div className="text-xs text-gray-400">
-                  {new Date(post.createdAt).toLocaleDateString()}
+                <div className="text-right">
+                  <div className="text-xs text-gray-400">
+                    {new Date(post.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 justify-end text-xs">
+                    <button
+                      onClick={() => handleRename(post)}
+                      className="text-blue-500 hover:text-blue-600"
+                    >
+                      Edit title
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
               <p className="text-sm text-gray-600 mb-2">{post.content}</p>
