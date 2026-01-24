@@ -87,8 +87,8 @@ export type RealtimeConfig = z.infer<typeof realtimeConfigSchema>
 export type {
   ReactiveFunction,
   ReactiveFunctionConfig,
-} from '../core/function'
+} from '../core/function.js'
 
 export type {
   ReactiveConfig,
-} from '../core/types'
+} from '../core/types.js'

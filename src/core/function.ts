@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod'
-import type { ReactiveDb, ReactiveFunctionContext } from './types'
+import type { ReactiveDb, ReactiveFunctionContext } from './types.js'
 
 /**
  * Options passed to tRPC handler

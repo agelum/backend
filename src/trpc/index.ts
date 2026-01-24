@@ -8,7 +8,7 @@ export {
   createReactiveRouter,
   createRouterFromFunctions,
   ReactiveRouter,
-} from "./router";
+} from "./router.js";
 
 // Types
 export type {
@@ -25,7 +25,7 @@ export type {
   RouterStats,
   ReactiveRouterError,
   ReactiveHandlerContext,
-} from "./types";
+} from "./types.js";
 
 // Hooks
 export {
@@ -33,7 +33,7 @@ export {
   useReactiveMutation,
   useReactiveSubscription,
   useReactiveRouterStats,
-} from "./hooks";
+} from "./hooks.js";
 
 export type {
   UseReactiveQueryOptions,
@@ -42,4 +42,4 @@ export type {
   UseReactiveMutationResult,
   UseReactiveSubscriptionOptions,
   UseReactiveSubscriptionResult,
-} from "./hooks";
+} from "./hooks.js";

@@ -26,15 +26,15 @@
  */
 
 // Core exports
-export { createReactiveDb } from "./core/driver";
-export { defineReactiveFunction } from "./core/function";
+export { createReactiveDb } from "./core/driver.js";
+export { defineReactiveFunction } from "./core/function.js";
 export type {
   ReactiveConfig,
   ReactiveDb,
   DrizzleDatabase,
   ReactiveFunctionContext,
   CacheProvider,
-} from "./core/types";
+} from "./core/types.js";
 
 // Function types
 export type {
@@ -43,45 +43,45 @@ export type {
   ReactiveFunctionMetadata,
   InvalidationChange,
   TrpcHandlerOptions,
-} from "./core/function";
+} from "./core/function.js";
 
 // tRPC integration exports
 export {
   createReactiveRouter,
   ReactiveRouter,
-} from "./trpc/router";
+} from "./trpc/router.js";
 export type {
   ReactiveRouterInstance,
   BuiltReactiveRouter,
   ReactiveHandlerContext,
-} from "./trpc/types";
+} from "./trpc/types.js";
 
 // Client-side exports - commented out to avoid server-side issues
 // Use @agelum/backend/client for client-side imports
-// export { ReactiveProvider } from './client/provider'
-// export { useReactive } from './client/hooks'
+// export { ReactiveProvider } from './client/provider.js'
+// export { useReactive } from './client/hooks.js'
 
 // Configuration exports
 export type {
   InvalidationRule,
   CacheStrategy,
   RealtimeConfig,
-} from "./config/schema";
+} from "./config/schema.js";
 
 // Provider exports
-export { RedisProvider } from "./providers/redis";
-export { MemoryProvider } from "./providers/memory";
-export { LocalStorageProvider } from "./providers/localStorage";
+export { RedisProvider } from "./providers/redis.js";
+export { MemoryProvider } from "./providers/memory.js";
+export { LocalStorageProvider } from "./providers/localStorage.js";
 
 // Utility exports
-export { analyzeSql } from "./core/analyzer";
+export { analyzeSql } from "./core/analyzer.js";
 export {
   createSSEStream,
   broadcastInvalidation,
   acknowledgeEvent,
   getSSEManager,
   SSEManager,
-} from "./core/sse";
+} from "./core/sse.js";
 
 // Version
 export const version = "0.1.0";

@@ -3,7 +3,7 @@
  * Perfect for unidirectional communication with automatic reconnection
  */
 
-import type { InvalidationEvent } from './types'
+import type { InvalidationEvent } from './types.js'
 
 export interface SSEConnection {
   organizationId: string

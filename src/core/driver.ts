@@ -6,11 +6,11 @@ import type {
   InvalidationCallback,
   SqlAnalysis,
   QueryMetadata,
-} from './types'
-import { analyzeSql } from './analyzer'
-import { MemoryProvider } from '../providers/memory'
-import { RedisProvider } from '../providers/redis'
-import { broadcastInvalidation } from './sse'
+} from './types.js'
+import { analyzeSql } from './analyzer.js'
+import { MemoryProvider } from '../providers/memory.js'
+import { RedisProvider } from '../providers/redis.js'
+import { broadcastInvalidation } from './sse.js'
 
 /**
  * Reactive SQL driver that intercepts all Drizzle operations

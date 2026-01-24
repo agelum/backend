@@ -5,8 +5,8 @@
  */
 
 // Core database exports
-export { createReactiveDb } from "./core/driver";
-export { defineReactiveFunction } from "./core/function";
+export { createReactiveDb } from "./core/driver.js";
+export { defineReactiveFunction } from "./core/function.js";
 export type {
   ReactiveConfig,
   ReactiveDb,
@@ -14,7 +14,7 @@ export type {
   ReactiveFunctionContext,
   CacheProvider,
   InvalidationEvent,
-} from "./core/types";
+} from "./core/types.js";
 
 // Function types
 export type {
@@ -23,39 +23,39 @@ export type {
   ReactiveFunctionMetadata,
   InvalidationChange,
   TrpcHandlerOptions,
-} from "./core/function";
+} from "./core/function.js";
 
 // tRPC integration exports
 export {
   createReactiveRouter,
   ReactiveRouter,
-} from "./trpc/router";
+} from "./trpc/router.js";
 export type {
   ReactiveRouterInstance,
   BuiltReactiveRouter,
   ReactiveHandlerContext,
-} from "./trpc/types";
+} from "./trpc/types.js";
 
 // Server-side providers
-export { RedisProvider } from "./providers/redis";
-export { MemoryProvider } from "./providers/memory";
+export { RedisProvider } from "./providers/redis.js";
+export { MemoryProvider } from "./providers/memory.js";
 
 // Server-side utilities
-export { analyzeSql } from "./core/analyzer";
+export { analyzeSql } from "./core/analyzer.js";
 export {
   createSSEStream,
   broadcastInvalidation,
   acknowledgeEvent,
   getSSEManager,
   SSEManager,
-} from "./core/sse";
+} from "./core/sse.js";
 
 // Configuration types
 export type {
   InvalidationRule,
   CacheStrategy,
   RealtimeConfig,
-} from "./config/schema";
+} from "./config/schema.js";
 
 // Version
 export const version = "0.1.0";

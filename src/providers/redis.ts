@@ -1,4 +1,4 @@
-import type { CacheProvider } from "../core/types";
+import type { CacheProvider } from "../core/types.js";
 
 /**
  * Redis cache provider implementation

@@ -12,11 +12,11 @@ import {
 import {
   ReactiveClientManager,
   createReactiveClientManager,
-} from "./manager";
+} from "./manager.js";
 import type {
   ReactiveConfig,
   InvalidationEvent,
-} from "../core/types";
+} from "../core/types.js";
 
 // Global client manager instance
 let globalClientManager: ReactiveClientManager | null =

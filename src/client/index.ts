@@ -3,7 +3,7 @@
  */
 
 // Storage and session management
-export { ReactiveStorage, createReactiveStorage } from './storage'
+export { ReactiveStorage, createReactiveStorage } from './storage.js'
 export {
   SimpleSessionManager,
   createSimpleSessionManager,
@@ -11,14 +11,14 @@ export {
   type SessionInfo,
   type QueryRegistry,
   type QueryRegistryEntry,
-} from './session'
+} from './session.js'
 
 // Client manager
 export {
   ReactiveClientManager,
   createReactiveClientManager,
   type ReactiveManagerOptions,
-} from './manager'
+} from './manager.js'
 
 // React hooks
 export {
@@ -31,7 +31,7 @@ export {
   useRevalidationStats,
   useReactiveConnection,
   initializeReactiveClient,
-} from './hooks'
+} from './hooks.js'
 
 // Smart revalidation
 export {
@@ -40,7 +40,7 @@ export {
   type RevalidationStrategy,
   type RevalidationOptions,
   type RevalidationResult,
-} from './revalidation'
+} from './revalidation.js'
 
 // Provider and types
-export { ReactiveProvider } from './provider'
+export { ReactiveProvider } from './provider.js'

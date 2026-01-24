@@ -3,8 +3,8 @@
  * Provides intelligent query revalidation based on user interaction patterns
  */
 
-import type { ReactiveStorage } from './storage'
-import type { ReactiveConfig, HookState } from '../core/types'
+import type { ReactiveStorage } from './storage.js'
+import type { ReactiveConfig, HookState } from '../core/types.js'
 
 export interface RevalidationStrategy {
   immediate: string[] // Execute immediately

@@ -11,9 +11,9 @@
  */
 
 import { initTRPC } from '@trpc/server'
-import type { ReactiveDb } from '../core/types'
-import type { ReactiveFunction } from '../core/function'
-import type { ReactiveHandlerContext } from './types'
+import type { ReactiveDb } from '../core/types.js'
+import type { ReactiveFunction } from '../core/function.js'
+import type { ReactiveHandlerContext } from './types.js'
 
 export interface ReactiveRouterConfig {
   db: ReactiveDb

@@ -6,7 +6,7 @@
 import type {
   QueryRegistry,
   HookState,
-} from "../core/types";
+} from "../core/types.js";
 
 export class ReactiveStorage {
   private storageKey =

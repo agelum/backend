@@ -1,4 +1,4 @@
-import type { SqlAnalysis } from './types'
+import type { SqlAnalysis } from './types.js'
 
 /**
  * Advanced SQL analyzer that extracts metadata from queries

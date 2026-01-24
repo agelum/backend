@@ -3,7 +3,7 @@
  * NO HEARTBEATS - relies on event acknowledgments and connection health
  */
 
-import type { InvalidationEvent } from '../core/types'
+import type { InvalidationEvent } from '../core/types.js'
 
 export interface SSEClientOptions {
   url: string

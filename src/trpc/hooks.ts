@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState, useRef } from 'react'
 import type { TRPCClientError } from '@trpc/client'
-import type { UseReactiveResult } from '../client/types'
+import type { UseReactiveResult } from '../client/types.js'
 
 export interface UseReactiveQueryOptions<TData = unknown> {
   enabled?: boolean

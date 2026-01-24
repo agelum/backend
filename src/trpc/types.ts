@@ -3,8 +3,8 @@
  */
 
 import type { AnyRouter } from '@trpc/server'
-import type { ReactiveRouter } from './router'
-import type { ReactiveDb } from '../core/types'
+import type { ReactiveRouter } from './router.js'
+import type { ReactiveDb } from '../core/types.js'
 import type { z } from 'zod'
 
 /**

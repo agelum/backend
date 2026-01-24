@@ -3,19 +3,19 @@
  * Coordinates storage, session recovery, and real-time synchronization
  */
 
-import { ReactiveStorage, createReactiveStorage } from './storage'
+import { ReactiveStorage, createReactiveStorage } from './storage.js'
 import {
   SimpleSessionManager,
   createSimpleSessionManager,
   revalidateOnPageLoad,
-} from './session'
+} from './session.js'
 import {
   SmartRevalidationEngine,
   createSmartRevalidationEngine,
   type RevalidationOptions,
-} from './revalidation'
-import { SSEClient, type SSEClientOptions } from './sse-client'
-import type { ReactiveConfig, InvalidationEvent } from '../core/types'
+} from './revalidation.js'
+import { SSEClient, type SSEClientOptions } from './sse-client.js'
+import type { ReactiveConfig, InvalidationEvent } from '../core/types.js'
 
 export interface ReactiveManagerOptions {
   organizationId: string

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ReactiveProvider } from './provider'
+import { ReactiveProvider } from './provider.js'
 
 type RelationsMap = Record<string, string[]>
 

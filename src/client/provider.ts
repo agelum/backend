@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { initializeReactiveClient } from './hooks'
-import type { ReactiveConfig } from '../core/types'
+import { initializeReactiveClient } from './hooks.js'
+import type { ReactiveConfig } from '../core/types.js'
 
 interface ReactiveProviderConfig {
   relations: Record<string, string[]>
