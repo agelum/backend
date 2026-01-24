@@ -424,23 +424,23 @@ export const transferFunds = defineReactiveFunction({
     amount: z.number().positive(),
   }),
   dependencies: ["account", "transaction"],
-  
+
   // Automatically wraps handler in a transaction
   transaction: {
     enabled: true,
     replicationMode: "sync", // Wait for replicas (optional)
   },
-  
+
   handler: async ({ input, db }) => {
     // All operations here run in a single transaction
     await db.db.update(accounts)
       .set({ balance: sql`balance - ${input.amount}` })
       .where(eq(accounts.id, input.fromAccountId));
-    
+
     await db.db.update(accounts)
       .set({ balance: sql`balance + ${input.amount}` })
       .where(eq(accounts.id, input.toAccountId));
-    
+
     return { success: true };
   },
 });
@@ -461,26 +461,26 @@ export const createOrder = defineReactiveFunction({
     })),
   }),
   dependencies: ["order", "orderItem", "inventory"],
-  
+
   handler: async ({ input, db }) => {
     // Manual transaction with full control
     return await db.db.transaction(async (tx) => {
       const order = await tx.insert(orders)
         .values({ userId: input.userId })
         .returning();
-      
+
       for (const item of input.items) {
         await tx.insert(orderItems).values({
           orderId: order[0].id,
           productId: item.productId,
           quantity: item.quantity,
         });
-        
+
         await tx.update(inventory)
           .set({ stock: sql`stock - ${item.quantity}` })
           .where(eq(inventory.productId, item.productId));
       }
-      
+
       return order[0];
     });
   },
@@ -499,7 +499,7 @@ export const createCriticalRecord = defineReactiveFunction({
     requiresSync: z.boolean(),
   }),
   dependencies: ["record", "auditLog"],
-  
+
   handler: async ({ input, db }) => {
     // Use db.transaction() helper with replication options
     return await db.transaction(
@@ -510,13 +510,13 @@ export const createCriticalRecord = defineReactiveFunction({
         const record = await tx.insert(records)
           .values({ data: input.data })
           .returning();
-        
+
         await tx.insert(auditLog).values({
           action: "CREATE",
           recordId: record[0].id,
           timestamp: new Date(),
         });
-        
+
         return record[0];
       }
     );
@@ -547,14 +547,14 @@ export const complexOperation = defineReactiveFunction({
   name: "operations.complex",
   input: z.object({ ... }),
   dependencies: ["tableA", "tableB"],
-  
+
   // Outer transaction wrapper
   transaction: { enabled: true },
-  
+
   handler: async ({ input, db }) => {
     // This runs inside the outer transaction
     await db.db.insert(tableA).values({ ... });
-    
+
     // This creates a savepoint within the outer transaction
     try {
       await db.transaction({ replicationMode: "sync" }, async (tx) => {
@@ -564,7 +564,7 @@ export const complexOperation = defineReactiveFunction({
     } catch (error) {
       // Outer transaction continues
     }
-    
+
     return { success: true };
   },
 });
