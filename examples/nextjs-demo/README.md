@@ -10,6 +10,7 @@ This is a complete demo application showcasing all features of `@agelum/backend`
 - 🔗 **Multi-tab Synchronization** - Changes propagate instantly across all tabs
 - 🎯 **Zero Configuration** - Single relations config, automatic everything else
 - 🔐 **Type Safety** - 100% end-to-end TypeScript types
+- 🗄️ **Redis Server Cache** - Shared server-side caching with Redis for optimal performance
 
 ## Quick Start
 
@@ -51,6 +52,13 @@ cp .env.example .env
 # Edit .env if needed (defaults work fine)
 ```
 
+Default environment variables:
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/reactive_demo
+REDIS_URL=redis://localhost:6379
+```
+
 ### 4. Setup Database
 
 Push the database schema:
@@ -87,6 +95,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 examples/nextjs-demo/
 ├── docker-compose.yml          # PostgreSQL + Redis
+├── .env.example                # Environment variables template
 ├── src/
 │   ├── app/
 │   │   ├── api/
@@ -97,7 +106,7 @@ examples/nextjs-demo/
 │   ├── server/
 │   │   ├── db/
 │   │   │   ├── schema.ts       # Drizzle schema
-│   │   │   └── index.ts        # ReactiveDb setup
+│   │   │   └── index.ts        # ReactiveDb setup with Redis cache
 │   │   ├── functions/          # Reactive functions
 │   │   │   ├── users.ts
 │   │   │   └── posts.ts
@@ -108,6 +117,43 @@ examples/nextjs-demo/
 │   └── components/             # React components
 └── scripts/
     └── seed.ts                 # Database seeding
+```
+
+## Architecture
+
+### Server-Side Caching with Redis
+
+This demo uses Redis for server-side caching, providing:
+
+- **Shared Cache**: All server instances share the same cache
+- **Pattern Invalidation**: Smart invalidation using Redis SCAN for pattern matching
+- **Automatic TTL**: Cached entries expire automatically
+- **Connection Pooling**: Efficient Redis connection management
+
+The cache configuration in `src/server/db/index.ts`:
+
+```typescript
+cache: {
+  server: {
+    provider: "redis",
+    redis: {
+      url: process.env.REDIS_URL,
+    },
+  },
+}
+```
+
+You can also pass an existing Redis client for advanced use cases:
+
+```typescript
+cache: {
+  server: {
+    provider: "redis",
+    redis: {
+      client: existingRedisClient,
+    },
+  },
+}
 ```
 
 ## Key Concepts
@@ -133,13 +179,21 @@ export const getUsers = defineReactiveFunction({
 
 ### 2. Reactive Database
 
-Setup once with relations config:
+Setup once with relations config and optional Redis caching:
 
 ```typescript
 export const db = createReactiveDb(drizzleDb, {
   relations: {
     users: ["posts"],
     posts: ["users"],
+  },
+  cache: {
+    server: {
+      provider: "redis",
+      redis: {
+        url: process.env.REDIS_URL || "redis://localhost:6379",
+      },
+    },
   },
 });
 ```
@@ -238,6 +292,18 @@ Check that the SSE endpoint is accessible:
 
 ```bash
 curl "http://localhost:3000/api/events?organizationId=demo-org-123"
+```
+
+### Redis connection failed
+
+Make sure Redis is running and healthy:
+
+```bash
+docker compose ps
+docker compose logs redis
+
+# Test Redis connection
+docker exec reactive-demo-redis redis-cli ping
 ```
 
 ## Learn More
