@@ -6,6 +6,7 @@ import type {
   InvalidationCallback,
   SqlAnalysis,
   QueryMetadata,
+  TransactionOptions,
 } from "./types.js";
 import { analyzeSql } from "./analyzer.js";
 import { MemoryProvider } from "../providers/memory.js";
@@ -571,6 +572,64 @@ class ReactiveSqlDriver<
   getOriginalDb(): TDrizzle {
     return this.originalDb;
   }
+
+  /**
+   * Execute operations within a database transaction (Option 3)
+   * Provides fine-grained transaction control with optional replication mode
+   */
+  async transaction<T>(
+    options: TransactionOptions,
+    callback: (
+      tx: TDrizzle,
+    ) => Promise<T>,
+  ): Promise<T> {
+    // Check if the database supports transactions
+    const dbTransaction = (
+      this.originalDb as any
+    ).transaction;
+    if (
+      typeof dbTransaction !== "function"
+    ) {
+      console.warn(
+        "[ReactiveDB] Database does not support transactions, executing without transaction wrapper",
+      );
+      return callback(this.originalDb);
+    }
+
+    // Execute within a transaction
+    return dbTransaction.call(
+      this.originalDb,
+      async (tx: TDrizzle) => {
+        // Set replication mode if specified (PostgreSQL specific)
+        if (options.replicationMode) {
+          try {
+            const syncCommitValue =
+              options.replicationMode ===
+              "sync"
+                ? "remote_apply"
+                : "local";
+
+            console.log(
+              `[ReactiveDB] Setting synchronous_commit = '${syncCommitValue}' for transaction`,
+            );
+
+            // Use SET LOCAL to only affect current transaction
+            await (tx as any).execute?.(
+              `SET LOCAL synchronous_commit = '${syncCommitValue}'`,
+            );
+          } catch (error) {
+            console.warn(
+              "[ReactiveDB] Failed to set synchronous_commit (database may not support it):",
+              error,
+            );
+            // Continue with transaction even if setting fails
+          }
+        }
+
+        return callback(tx);
+      },
+    );
+  }
 }
 
 /**
@@ -611,5 +670,7 @@ export function createReactiveDb<
       driver.getCache.bind(driver),
     subscribe:
       driver.subscribe.bind(driver),
+    transaction:
+      driver.transaction.bind(driver),
   };
 }

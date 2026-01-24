@@ -32,6 +32,10 @@ import {
   acknowledgeEvent,
   RedisProvider,
   MemoryProvider,
+  // Transaction types (optional, for explicit typing)
+  type TransactionOptions,
+  type TransactionConfig,
+  type TransactionReplicationMode,
 } from "@agelum/backend/server";
 
 // Client-side only (React components)
@@ -312,7 +316,9 @@ const metadata = getUsers.getMetadata();
 //   dependencies: ["user"],
 //   cacheEnabled: true,
 //   cacheTtl: 300,
-//   hasInvalidationRules: false
+//   hasInvalidationRules: false,
+//   transactionEnabled: false,
+//   transactionReplicationMode: undefined
 // }
 ```
 
@@ -399,6 +405,169 @@ function MyComponent() {
 
   // Component content...
 }
+```
+
+## Transactions
+
+The library supports database transactions with three flexible approaches. You can use any combination of these depending on your needs.
+
+### Option 1: Declarative Transaction Config (Simplest)
+
+Add `transaction` config to automatically wrap the entire handler in a transaction:
+
+```typescript
+export const transferFunds = defineReactiveFunction({
+  name: "accounts.transfer",
+  input: z.object({
+    fromAccountId: z.string(),
+    toAccountId: z.string(),
+    amount: z.number().positive(),
+  }),
+  dependencies: ["account", "transaction"],
+  
+  // Automatically wraps handler in a transaction
+  transaction: {
+    enabled: true,
+    replicationMode: "sync", // Wait for replicas (optional)
+  },
+  
+  handler: async ({ input, db }) => {
+    // All operations here run in a single transaction
+    await db.db.update(accounts)
+      .set({ balance: sql`balance - ${input.amount}` })
+      .where(eq(accounts.id, input.fromAccountId));
+    
+    await db.db.update(accounts)
+      .set({ balance: sql`balance + ${input.amount}` })
+      .where(eq(accounts.id, input.toAccountId));
+    
+    return { success: true };
+  },
+});
+```
+
+### Option 2: Manual Drizzle Transactions (Full Control)
+
+Use Drizzle's native transaction API directly in the handler:
+
+```typescript
+export const createOrder = defineReactiveFunction({
+  name: "orders.create",
+  input: z.object({
+    userId: z.string(),
+    items: z.array(z.object({
+      productId: z.string(),
+      quantity: z.number(),
+    })),
+  }),
+  dependencies: ["order", "orderItem", "inventory"],
+  
+  handler: async ({ input, db }) => {
+    // Manual transaction with full control
+    return await db.db.transaction(async (tx) => {
+      const order = await tx.insert(orders)
+        .values({ userId: input.userId })
+        .returning();
+      
+      for (const item of input.items) {
+        await tx.insert(orderItems).values({
+          orderId: order[0].id,
+          productId: item.productId,
+          quantity: item.quantity,
+        });
+        
+        await tx.update(inventory)
+          .set({ stock: sql`stock - ${item.quantity}` })
+          .where(eq(inventory.productId, item.productId));
+      }
+      
+      return order[0];
+    });
+  },
+});
+```
+
+### Option 3: Context Helper with Replication Control
+
+Use `db.transaction()` for fine-grained control with replication modes:
+
+```typescript
+export const createCriticalRecord = defineReactiveFunction({
+  name: "records.createCritical",
+  input: z.object({
+    data: z.string(),
+    requiresSync: z.boolean(),
+  }),
+  dependencies: ["record", "auditLog"],
+  
+  handler: async ({ input, db }) => {
+    // Use db.transaction() helper with replication options
+    return await db.transaction(
+      {
+        replicationMode: input.requiresSync ? "sync" : "async",
+      },
+      async (tx) => {
+        const record = await tx.insert(records)
+          .values({ data: input.data })
+          .returning();
+        
+        await tx.insert(auditLog).values({
+          action: "CREATE",
+          recordId: record[0].id,
+          timestamp: new Date(),
+        });
+        
+        return record[0];
+      }
+    );
+  },
+});
+```
+
+### Replication Modes
+
+For clustered PostgreSQL databases, you can control how transactions wait for replication:
+
+| Mode | PostgreSQL Setting | Behavior |
+|------|-------------------|----------|
+| `"sync"` | `synchronous_commit = 'remote_apply'` | Waits for replicas to apply the transaction (strong consistency) |
+| `"async"` | `synchronous_commit = 'local'` | Returns immediately without waiting (eventual consistency, faster) |
+| `undefined` | Database default | Uses whatever the database is configured with |
+
+**When to use each:**
+- **`"sync"`**: Critical operations where you need to read-after-write from any replica (e.g., financial transactions, user creation followed by login)
+- **`"async"`**: High-throughput operations where eventual consistency is acceptable (e.g., logging, analytics, non-critical updates)
+
+### Combining Options
+
+You can combine Option 1 (declarative) with Option 2 or 3 inside the handler. When `transaction.enabled` is set, the handler runs inside a transaction, and any nested `db.transaction()` calls create savepoints:
+
+```typescript
+export const complexOperation = defineReactiveFunction({
+  name: "operations.complex",
+  input: z.object({ ... }),
+  dependencies: ["tableA", "tableB"],
+  
+  // Outer transaction wrapper
+  transaction: { enabled: true },
+  
+  handler: async ({ input, db }) => {
+    // This runs inside the outer transaction
+    await db.db.insert(tableA).values({ ... });
+    
+    // This creates a savepoint within the outer transaction
+    try {
+      await db.transaction({ replicationMode: "sync" }, async (tx) => {
+        await tx.insert(tableB).values({ ... });
+        // If this fails, only this savepoint is rolled back
+      });
+    } catch (error) {
+      // Outer transaction continues
+    }
+    
+    return { success: true };
+  },
+});
 ```
 
 ## Important Rules

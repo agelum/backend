@@ -64,6 +64,41 @@ export interface ReactiveConfig {
 }
 
 /**
+ * Replication mode for transactions in clustered databases
+ * - "sync": Wait for replication to complete before returning (strong consistency)
+ * - "async": Return immediately without waiting for replication (eventual consistency)
+ */
+export type TransactionReplicationMode =
+  | "sync"
+  | "async";
+
+/**
+ * Transaction options for manual transaction control (Option 3)
+ */
+export interface TransactionOptions {
+  /**
+   * Replication mode for clustered databases
+   * - "sync": Sets synchronous_commit = 'remote_apply' (waits for replicas)
+   * - "async": Sets synchronous_commit = 'local' (doesn't wait)
+   * @default undefined (uses database default)
+   */
+  replicationMode?: TransactionReplicationMode;
+}
+
+/**
+ * Transaction configuration for reactive functions (Option 1)
+ */
+export interface TransactionConfig {
+  /** Enable transaction wrapping for the handler */
+  enabled: true;
+  /**
+   * Replication mode for clustered databases
+   * @default undefined (uses database default)
+   */
+  replicationMode?: TransactionReplicationMode;
+}
+
+/**
  * Reactive database instance
  */
 export interface ReactiveDb<
@@ -86,6 +121,16 @@ export interface ReactiveDb<
     organizationId: string,
     callback: InvalidationCallback,
   ) => () => void;
+  /**
+   * Execute operations within a transaction (Option 3)
+   * Use this for fine-grained transaction control within handlers
+   */
+  transaction: <T>(
+    options: TransactionOptions,
+    callback: (
+      tx: TDrizzle,
+    ) => Promise<T>,
+  ) => Promise<T>;
 }
 
 /**

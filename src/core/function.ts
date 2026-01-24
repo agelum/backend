@@ -8,6 +8,8 @@ import type {
   CacheProvider,
   ReactiveDb,
   ReactiveFunctionContext,
+  TransactionConfig,
+  TransactionReplicationMode,
 } from "./types.js";
 
 /**
@@ -49,6 +51,12 @@ export interface ReactiveFunctionConfig<
     ttl?: number;
     key?: (input: TInput) => string;
   };
+
+  /**
+   * Optional: Transaction configuration (Option 1 - declarative)
+   * When enabled, the handler will be automatically wrapped in a database transaction
+   */
+  transaction?: TransactionConfig;
 
   /** The actual function logic - receives context with input and db */
   handler: (
@@ -109,6 +117,10 @@ export interface ReactiveFunctionMetadata {
   cacheEnabled: boolean;
   cacheTtl: number;
   hasInvalidationRules: boolean;
+  /** Whether this function runs in a transaction */
+  transactionEnabled: boolean;
+  /** Replication mode for transactions */
+  transactionReplicationMode?: TransactionReplicationMode;
 }
 
 /**
@@ -207,12 +219,34 @@ export function defineReactiveFunction<
         }
       }
 
-      // Execute function handler - clean and simple
-      const result =
-        await config.handler({
+      // Execute function handler - with optional transaction wrapping (Option 1)
+      let result: TOutput;
+
+      if (config.transaction?.enabled) {
+        // Wrap handler in a transaction
+        console.log(
+          `[ReactiveFunction] Executing ${config.name} in transaction (replicationMode: ${config.transaction.replicationMode ?? "default"})`,
+        );
+        result = await db.transaction(
+          {
+            replicationMode:
+              config.transaction
+                .replicationMode,
+          },
+          async () => {
+            return await config.handler({
+              input: validatedInput,
+              db,
+            });
+          },
+        );
+      } else {
+        // Execute without transaction wrapper
+        result = await config.handler({
           input: validatedInput,
           db,
         });
+      }
 
       // Cache result if enabled
       if (cacheConfig.enabled) {
@@ -302,6 +336,12 @@ export function defineReactiveFunction<
         cacheTtl: cacheConfig.ttl,
         hasInvalidationRules:
           !!config.invalidateWhen,
+        transactionEnabled:
+          config.transaction?.enabled ??
+          false,
+        transactionReplicationMode:
+          config.transaction
+            ?.replicationMode,
       };
     };
 

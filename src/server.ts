@@ -14,6 +14,9 @@ export type {
   ReactiveFunctionContext,
   CacheProvider,
   InvalidationEvent,
+  TransactionOptions,
+  TransactionConfig,
+  TransactionReplicationMode,
 } from "./core/types.js";
 
 // Function types
