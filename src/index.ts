@@ -31,7 +31,19 @@ export { defineReactiveFunction } from "./core/function";
 export type {
   ReactiveConfig,
   ReactiveDb,
+  DrizzleDatabase,
+  ReactiveFunctionContext,
+  CacheProvider,
 } from "./core/types";
+
+// Function types
+export type {
+  ReactiveFunctionConfig,
+  ReactiveFunction,
+  ReactiveFunctionMetadata,
+  InvalidationChange,
+  TrpcHandlerOptions,
+} from "./core/function";
 
 // tRPC integration exports
 export {
@@ -41,6 +53,7 @@ export {
 export type {
   ReactiveRouterInstance,
   BuiltReactiveRouter,
+  ReactiveHandlerContext,
 } from "./trpc/types";
 
 // Client-side exports - commented out to avoid server-side issues
@@ -50,8 +63,6 @@ export type {
 
 // Configuration exports
 export type {
-  ReactiveFunction,
-  ReactiveFunctionConfig,
   InvalidationRule,
   CacheStrategy,
   RealtimeConfig,

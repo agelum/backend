@@ -4,9 +4,16 @@
  */
 
 import { z } from 'zod'
-import type { ReactiveDb } from './types'
+import type { ReactiveDb, ReactiveFunctionContext } from './types'
 
-export interface ReactiveFunctionConfig<TInput = any, TOutput = any> {
+/**
+ * Options passed to tRPC handler
+ */
+export interface TrpcHandlerOptions<TInput> {
+  input: TInput
+}
+
+export interface ReactiveFunctionConfig<TInput = unknown, TOutput = unknown> {
   /** Function name (used for cache keys and tRPC procedure names) */
   name: string
 
@@ -26,8 +33,8 @@ export interface ReactiveFunctionConfig<TInput = any, TOutput = any> {
     key?: (input: TInput) => string
   }
 
-  /** The actual function logic - clean and simple */
-  handler: (input: TInput, db: ReactiveDb) => Promise<TOutput>
+  /** The actual function logic - receives context with input and db */
+  handler: (ctx: ReactiveFunctionContext<TInput>) => Promise<TOutput>
 }
 
 export interface InvalidationChange {
@@ -37,7 +44,7 @@ export interface InvalidationChange {
   timestamp: number
 }
 
-export interface ReactiveFunction<TInput = any, TOutput = any> {
+export interface ReactiveFunction<TInput = unknown, TOutput = unknown> {
   /** Function configuration */
   config: ReactiveFunctionConfig<TInput, TOutput>
 
@@ -54,7 +61,7 @@ export interface ReactiveFunction<TInput = any, TOutput = any> {
   getMetadata: () => ReactiveFunctionMetadata
 
   /** Get tRPC-compatible handler (for tRPC router integration) */
-  getTrpcHandler: (db: ReactiveDb) => (opts: any) => Promise<TOutput>
+  getTrpcHandler: (db: ReactiveDb) => (opts: TrpcHandlerOptions<TInput>) => Promise<TOutput>
 }
 
 export interface ReactiveFunctionMetadata {
@@ -68,7 +75,7 @@ export interface ReactiveFunctionMetadata {
 /**
  * Define a reactive function - the core building block
  */
-export function defineReactiveFunction<TInput = any, TOutput = any>(
+export function defineReactiveFunction<TInput, TOutput>(
   config: ReactiveFunctionConfig<TInput, TOutput>
 ): ReactiveFunction<TInput, TOutput> {
   // Validate configuration
@@ -113,7 +120,7 @@ export function defineReactiveFunction<TInput = any, TOutput = any>(
     try {
       // Check cache if enabled
       if (cacheConfig.enabled) {
-        const cached = await getCachedResult(db, cacheKey)
+        const cached = await getCachedResult<TOutput>(db, cacheKey)
         if (cached && !isCacheStale(cached, cacheConfig.ttl)) {
           console.log(`[ReactiveFunction] Cache hit for ${cacheKey}`)
           return cached.data
@@ -121,7 +128,7 @@ export function defineReactiveFunction<TInput = any, TOutput = any>(
       }
 
       // Execute function handler - clean and simple
-      const result = await config.handler(validatedInput, db)
+      const result = await config.handler({ input: validatedInput, db })
 
       // Cache result if enabled
       if (cacheConfig.enabled) {
@@ -189,7 +196,7 @@ export function defineReactiveFunction<TInput = any, TOutput = any>(
    * Get tRPC-compatible handler that wraps the reactive function
    */
   const getTrpcHandler = (db: ReactiveDb) => {
-    return async (opts: any): Promise<TOutput> => {
+    return async (opts: TrpcHandlerOptions<TInput>): Promise<TOutput> => {
       // Simply delegate to the execute method with the reactive database
       return execute(opts.input, db)
     }
@@ -209,20 +216,20 @@ export function defineReactiveFunction<TInput = any, TOutput = any>(
  * Registry for managing reactive functions
  */
 export class ReactiveFunctionRegistry {
-  private functions = new Map<string, ReactiveFunction>()
+  private functions = new Map<string, ReactiveFunction<unknown, unknown>>()
 
   /**
    * Register a reactive function
    */
-  register(name: string, fn: ReactiveFunction): void {
-    this.functions.set(name, fn)
+  register<TInput, TOutput>(name: string, fn: ReactiveFunction<TInput, TOutput>): void {
+    this.functions.set(name, fn as ReactiveFunction<unknown, unknown>)
     console.log(`[ReactiveRegistry] Registered function: ${name}`)
   }
 
   /**
    * Execute a registered function
    */
-  async execute<T>(name: string, input: any, db: ReactiveDb): Promise<T> {
+  async execute<T>(name: string, input: unknown, db: ReactiveDb): Promise<T> {
     const fn = this.functions.get(name)
     if (!fn) {
       throw new Error(`ReactiveFunction '${name}' not found`)
@@ -234,7 +241,7 @@ export class ReactiveFunctionRegistry {
   /**
    * Get function by name
    */
-  get(name: string): ReactiveFunction | undefined {
+  get(name: string): ReactiveFunction<unknown, unknown> | undefined {
     return this.functions.get(name)
   }
 
@@ -295,10 +302,10 @@ export function getReactiveFunctionRegistry(): ReactiveFunctionRegistry {
 /**
  * Helper to register a reactive function globally
  */
-export function registerReactiveFunction(
+export function registerReactiveFunction<TInput, TOutput>(
   name: string,
-  config: ReactiveFunctionConfig
-): ReactiveFunction {
+  config: ReactiveFunctionConfig<TInput, TOutput>
+): ReactiveFunction<TInput, TOutput> {
   const fn = defineReactiveFunction(config)
   const registry = getReactiveFunctionRegistry()
   registry.register(name, fn)
@@ -308,12 +315,20 @@ export function registerReactiveFunction(
 // Helper functions for caching (simplified for now)
 
 /**
+ * Cached result structure
+ */
+interface CachedResult<T = unknown> {
+  data: T
+  timestamp: number
+}
+
+/**
  * Get cached result from database
  */
-async function getCachedResult(
+async function getCachedResult<T>(
   db: ReactiveDb,
   cacheKey: string
-): Promise<{ data: any; timestamp: number } | null> {
+): Promise<CachedResult<T> | null> {
   try {
     // In a real implementation, this would use the cache provider
     // For now, we simulate cache behavior
@@ -333,14 +348,22 @@ function isCacheStale(cached: { timestamp: number }, ttl: number): boolean {
 }
 
 /**
+ * Cache metadata structure
+ */
+interface CacheMetadata {
+  dependencies: string[]
+  timestamp: number
+}
+
+/**
  * Cache function result
  */
-async function cacheResult(
+async function cacheResult<T>(
   db: ReactiveDb,
   cacheKey: string,
-  data: any,
+  data: T,
   ttl: number,
-  metadata: any
+  metadata: CacheMetadata
 ): Promise<void> {
   try {
     // In a real implementation, this would use the cache provider
@@ -358,6 +381,7 @@ async function cacheResult(
 
     // This would actually cache the data
     // await db.setCache(cacheKey, cacheEntry, ttl)
+    void cacheEntry // Suppress unused variable warning until implemented
   } catch (error) {
     console.warn(`[ReactiveFunction] Cache set error:`, error)
   }

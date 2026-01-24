@@ -1,6 +1,7 @@
 import type {
   ReactiveConfig,
   ReactiveDb,
+  DrizzleDatabase,
   CacheProvider,
   InvalidationCallback,
   SqlAnalysis,
@@ -14,12 +15,12 @@ import { broadcastInvalidation } from './sse'
 /**
  * Reactive SQL driver that intercepts all Drizzle operations
  */
-class ReactiveSqlDriver {
+class ReactiveSqlDriver<TDrizzle extends DrizzleDatabase> {
   private cache: CacheProvider
   private subscribers = new Map<string, Set<InvalidationCallback>>()
   private queryMetadata = new Map<string, QueryMetadata>()
 
-  constructor(private originalDb: any, private config: ReactiveConfig) {
+  constructor(private originalDb: TDrizzle, private config: ReactiveConfig) {
     // Initialize cache provider based on config
     this.cache = this.initializeCacheProvider()
 
@@ -42,18 +43,21 @@ class ReactiveSqlDriver {
   private wrapDrizzleMethods() {
     // Intercept the execute method which is the core SQL execution point
     if (this.originalDb.execute) {
-      const originalExecute = this.originalDb.execute.bind(this.originalDb)
-      this.originalDb.execute = async (query: any, params?: any[]) => {
-        return this.interceptQuery(query, params, originalExecute)
+      const originalExecute = this.originalDb.execute.bind(this.originalDb) as (query: unknown, params?: unknown[]) => Promise<unknown>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(this.originalDb as any).execute = async (query: unknown, params?: unknown[]) => {
+        return this.interceptQuery(query, params, () => originalExecute(query, params))
       }
     }
 
     // Intercept select/insert/update/delete methods
-    const methods = ['select', 'insert', 'update', 'delete']
+    const methods = ['select', 'insert', 'update', 'delete'] as const
     methods.forEach((method) => {
-      if (this.originalDb[method]) {
-        const originalMethod = this.originalDb[method].bind(this.originalDb)
-        this.originalDb[method] = (...args: any[]) => {
+      const dbMethod = this.originalDb[method]
+      if (dbMethod) {
+        const originalMethod = (dbMethod as (...args: unknown[]) => unknown).bind(this.originalDb)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(this.originalDb as any)[method] = (...args: unknown[]) => {
           const queryBuilder = originalMethod(...args)
           return this.wrapQueryBuilder(queryBuilder, method.toUpperCase())
         }
@@ -298,7 +302,7 @@ class ReactiveSqlDriver {
     }
   }
 
-  getOriginalDb() {
+  getOriginalDb(): TDrizzle {
     return this.originalDb
   }
 }
@@ -307,10 +311,10 @@ class ReactiveSqlDriver {
  * Create a reactive database instance
  * This is the main entry point for the library
  */
-export function createReactiveDb(
-  drizzleDb: any,
+export function createReactiveDb<TDrizzle extends DrizzleDatabase>(
+  drizzleDb: TDrizzle,
   config: ReactiveConfig
-): ReactiveDb {
+): ReactiveDb<TDrizzle> {
   console.log('[ReactiveDB] Initializing reactive database with config:', {
     relations: Object.keys(config.relations),
     cacheProvider: config.cache?.server?.provider || 'memory',

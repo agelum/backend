@@ -13,22 +13,30 @@
 import { initTRPC } from '@trpc/server'
 import type { ReactiveDb } from '../core/types'
 import type { ReactiveFunction } from '../core/function'
+import type { ReactiveHandlerContext } from './types'
 
 export interface ReactiveRouterConfig {
   db: ReactiveDb
 }
 
 /**
+ * Create typed tRPC instance with ReactiveHandlerContext
+ */
+const createTypedTRPC = () => initTRPC.context<ReactiveHandlerContext>().create()
+type TypedTRPC = ReturnType<typeof createTypedTRPC>
+
+/**
  * Simple reactive tRPC router - just exposes reactive functions as tRPC procedures
  */
 export class ReactiveRouter {
-  private t: ReturnType<typeof initTRPC.create>
+  private t: TypedTRPC
   private db: ReactiveDb
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private procedures = new Map<string, any>()
 
   constructor(config: ReactiveRouterConfig) {
     this.db = config.db
-    this.t = initTRPC.context<any>().create()
+    this.t = initTRPC.context<ReactiveHandlerContext>().create()
   }
 
   /**
@@ -39,9 +47,11 @@ export class ReactiveRouter {
     reactiveFunction: ReactiveFunction<TInput, TOutput>
   ) {
     const name = reactiveFunction.config.name
+    const handler = reactiveFunction.getTrpcHandler(this.db)
     const procedure = this.t.procedure
       .input(reactiveFunction.config.input)
-      .query(reactiveFunction.getTrpcHandler(this.db))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .query(async (opts: any) => handler(opts))
 
     this.procedures.set(name, procedure)
     return this
@@ -55,9 +65,11 @@ export class ReactiveRouter {
     reactiveFunction: ReactiveFunction<TInput, TOutput>
   ) {
     const name = reactiveFunction.config.name
+    const handler = reactiveFunction.getTrpcHandler(this.db)
     const procedure = this.t.procedure
       .input(reactiveFunction.config.input)
-      .mutation(reactiveFunction.getTrpcHandler(this.db))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mutation(async (opts: any) => handler(opts))
 
     this.procedures.set(name, procedure)
     return this
@@ -70,9 +82,11 @@ export class ReactiveRouter {
     name: string,
     reactiveFunction: ReactiveFunction<TInput, TOutput>
   ) {
+    const handler = reactiveFunction.getTrpcHandler(this.db)
     const procedure = this.t.procedure
       .input(reactiveFunction.config.input)
-      .query(reactiveFunction.getTrpcHandler(this.db))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .query(async (opts: any) => handler(opts))
 
     this.procedures.set(name, procedure)
     return this
@@ -85,9 +99,11 @@ export class ReactiveRouter {
     name: string,
     reactiveFunction: ReactiveFunction<TInput, TOutput>
   ) {
+    const handler = reactiveFunction.getTrpcHandler(this.db)
     const procedure = this.t.procedure
       .input(reactiveFunction.config.input)
-      .mutation(reactiveFunction.getTrpcHandler(this.db))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mutation(async (opts: any) => handler(opts))
 
     this.procedures.set(name, procedure)
     return this
@@ -97,12 +113,14 @@ export class ReactiveRouter {
    * Build the final tRPC router
    */
   build() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const routerObj: Record<string, any> = {}
 
     for (const [name, procedure] of this.procedures) {
       // Support nested router structure (e.g., 'users.getAll' -> { users: { getAll: procedure } })
       const parts = name.split('.')
-      let current = routerObj
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let current: Record<string, any> = routerObj
 
       for (let i = 0; i < parts.length - 1; i++) {
         if (!current[parts[i]]) {
@@ -115,8 +133,10 @@ export class ReactiveRouter {
     }
 
     // Recursively wrap nested objects into tRPC routers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wrapRouters = (node: Record<string, any>): Record<string, any> => {
       const entries = Object.entries(node)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const built: Record<string, any> = {}
       for (const [key, value] of entries) {
         // Heuristic: a procedure in tRPC has a _def property; nested routers won't
@@ -170,7 +190,7 @@ export function createRouterFromFunctions(
   db: ReactiveDb,
   functions: Record<
     string,
-    { type: 'query' | 'mutation'; fn: ReactiveFunction }
+    { type: 'query' | 'mutation'; fn: ReactiveFunction<unknown, unknown> }
   >
 ): ReactiveRouter {
   const router = createReactiveRouter({ db })

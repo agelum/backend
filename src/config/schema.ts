@@ -74,21 +74,21 @@ export const cacheStrategySchema = z.object({
 /**
  * Type exports from schemas
  */
-export type ReactiveConfig = z.infer<typeof reactiveConfigSchema>
-export type ReactiveFunctionConfig = z.infer<
+export type ReactiveConfigSchema = z.infer<typeof reactiveConfigSchema>
+export type ReactiveFunctionConfigSchema = z.infer<
   typeof reactiveFunctionConfigSchema
 >
 export type InvalidationRule = z.infer<typeof invalidationRuleSchema>
 export type CacheStrategy = z.infer<typeof cacheStrategySchema>
 export type RealtimeConfig = z.infer<typeof realtimeConfigSchema>
 
-/**
- * Reactive function type
- */
-export interface ReactiveFunction<TInput = any, TOutput = any> {
-  id: string
-  input: z.ZodSchema<TInput>
-  dependencies: string[]
-  invalidateWhen?: Record<string, (change: any) => boolean>
-  handler: (params: { input: TInput; db: any }) => Promise<TOutput>
-}
+// Re-export types from core to avoid duplication
+// The canonical types are defined in core/function.ts and core/types.ts
+export type {
+  ReactiveFunction,
+  ReactiveFunctionConfig,
+} from '../core/function'
+
+export type {
+  ReactiveConfig,
+} from '../core/types'

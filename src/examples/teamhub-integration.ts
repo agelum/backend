@@ -35,7 +35,7 @@ export const getAgents = defineReactiveFunction({
     organizationId: z.string(),
   }),
   dependencies: ['agent'],
-  handler: async (input, db) => {
+  handler: async ({ input, db }) => {
     return db.query(
       `
       SELECT * FROM agents
@@ -65,7 +65,7 @@ export const getAgentWithStats = defineReactiveFunction({
   cache: {
     ttl: 180, // 3 minutes for detailed stats
   },
-  handler: async (input, db) => {
+  handler: async ({ input, db }) => {
     const [agent, messageCount, memoryCount, lastMessage] = await Promise.all([
       db.query(
         `
@@ -103,10 +103,14 @@ export const getAgentWithStats = defineReactiveFunction({
     ])
 
     return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       agent: (agent as any[])[0],
       stats: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         messageCount: (messageCount as any[])[0]?.count || 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         memoryCount: (memoryCount as any[])[0]?.count || 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         lastActive: (lastMessage as any[])[0]?.created_at || null,
       },
       recentMessages: lastMessage,
@@ -133,10 +137,10 @@ export const updateAgent = defineReactiveFunction({
   invalidateWhen: {
     agent: (change) => change.keys.includes('id'),
   },
-  handler: async (input, db) => {
+  handler: async ({ input, db }) => {
     const updateFields = Object.entries(input.data)
-      .filter(([_, value]) => value !== undefined)
-      .map(([key, _], index) => `${key} = $${index + 3}`)
+      .filter(([, value]) => value !== undefined)
+      .map(([key], index) => `${key} = $${index + 3}`)
       .join(', ')
 
     const updateValues = Object.values(input.data).filter(

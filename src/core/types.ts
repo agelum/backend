@@ -1,6 +1,20 @@
 import type { z } from 'zod'
 
 /**
+ * Drizzle database instance type
+ * Uses a minimal interface to avoid tight coupling with specific Drizzle versions
+ */
+export interface DrizzleDatabase {
+  execute: (query: unknown, params?: unknown[]) => Promise<unknown>
+  select: (...args: unknown[]) => unknown
+  insert: (...args: unknown[]) => unknown
+  update: (...args: unknown[]) => unknown
+  delete: (...args: unknown[]) => unknown
+  /** Allow index access for dynamic method calls */
+  [key: string]: unknown
+}
+
+/**
  * Core reactive database configuration
  */
 export interface ReactiveConfig {
@@ -30,13 +44,13 @@ export interface ReactiveConfig {
 /**
  * Reactive database instance
  */
-export interface ReactiveDb {
+export interface ReactiveDb<TDrizzle extends DrizzleDatabase = DrizzleDatabase> {
   /** Original Drizzle database instance */
-  db: any
+  db: TDrizzle
   /** Configuration */
   config: ReactiveConfig
   /** Execute query with reactive features */
-  query: <T>(sql: string, params?: any[]) => Promise<T>
+  query: <T>(sql: string, params?: unknown[]) => Promise<T>
   /** Get cache provider */
   getCache: () => CacheProvider
   /** Subscribe to invalidation events */
@@ -129,7 +143,7 @@ export interface QueryRegistry {
     [queryKey: string]: {
       lastRevalidated: number
       lastServerChange?: number
-      data?: any
+      data?: unknown
     }
   }
   /** Session information */
@@ -141,9 +155,17 @@ export interface QueryRegistry {
 }
 
 /**
+ * Context passed to reactive function handlers
+ */
+export interface ReactiveFunctionContext<TInput = unknown> {
+  input: TInput
+  db: ReactiveDb
+}
+
+/**
  * Reactive function definition
  */
-export interface ReactiveFunctionDefinition<TInput = any, TOutput = any> {
+export interface ReactiveFunctionDefinition<TInput = unknown, TOutput = unknown> {
   /** Unique function ID */
   id: string
   /** Input validation schema */
@@ -153,7 +175,7 @@ export interface ReactiveFunctionDefinition<TInput = any, TOutput = any> {
   /** Optional fine-grained invalidation rules */
   invalidateWhen?: Record<string, (change: TableChange) => boolean>
   /** Function handler */
-  handler: (params: { input: TInput; db: any }) => Promise<TOutput>
+  handler: (ctx: ReactiveFunctionContext<TInput>) => Promise<TOutput>
 }
 
 /**

@@ -2,8 +2,10 @@
  * tRPC type definitions for reactive router
  */
 
-import type { Router } from '@trpc/server'
+import type { AnyRouter } from '@trpc/server'
 import type { ReactiveRouter } from './router'
+import type { ReactiveDb } from '../core/types'
+import type { z } from 'zod'
 
 /**
  * Type for reactive router instance
@@ -12,23 +14,31 @@ export type ReactiveRouterInstance = ReactiveRouter
 
 /**
  * Type for built tRPC router with reactive features
+ * Note: Use `typeof router` from your built router for full type inference
  */
-export type BuiltReactiveRouter = Router<any>
+export type BuiltReactiveRouter = AnyRouter
+
+/**
+ * Handler context with reactive database
+ */
+export interface ReactiveHandlerContext {
+  db: ReactiveDb
+}
 
 /**
  * Configuration for reactive procedures
  */
-export interface ReactiveProcedureConfig<TInput = any, TOutput = any> {
-  input?: any // Zod schema
+export interface ReactiveProcedureConfig<TInput = unknown, TOutput = unknown> {
+  input?: z.ZodType<TInput>
   dependencies?: string[] // Table dependencies for queries
   invalidates?: string[] // Tables to invalidate for mutations
-  handler: (opts: { input: TInput; ctx: any }) => Promise<TOutput>
+  handler: (opts: { input: TInput; ctx: ReactiveHandlerContext }) => Promise<TOutput>
 }
 
 /**
  * Reactive query procedure configuration
  */
-export interface ReactiveQueryConfig<TInput = any, TOutput = any>
+export interface ReactiveQueryConfig<TInput = unknown, TOutput = unknown>
   extends ReactiveProcedureConfig<TInput, TOutput> {
   dependencies: string[] // Required for queries
 }
@@ -36,7 +46,7 @@ export interface ReactiveQueryConfig<TInput = any, TOutput = any>
 /**
  * Reactive mutation procedure configuration
  */
-export interface ReactiveMutationConfig<TInput = any, TOutput = any>
+export interface ReactiveMutationConfig<TInput = unknown, TOutput = unknown>
   extends ReactiveProcedureConfig<TInput, TOutput> {
   invalidates: string[] // Required for mutations
 }
@@ -44,16 +54,16 @@ export interface ReactiveMutationConfig<TInput = any, TOutput = any>
 /**
  * Reactive subscription procedure configuration
  */
-export interface ReactiveSubscriptionConfig<TInput = any, TOutput = any> {
-  input?: any // Zod schema
+export interface ReactiveSubscriptionConfig<TInput = unknown, TOutput = unknown> {
+  input?: z.ZodType<TInput>
   dependencies: string[] // Tables to subscribe to
-  handler: (opts: { input: TInput; ctx: any }) => AsyncIterable<TOutput>
+  handler: (opts: { input: TInput; ctx: ReactiveHandlerContext }) => AsyncIterable<TOutput>
 }
 
 /**
  * Cache entry metadata
  */
-export interface CacheEntry<T = any> {
+export interface CacheEntry<T = unknown> {
   data: T
   timestamp: number
   dependencies: string[]
@@ -102,7 +112,7 @@ export interface ReactiveRouterBuilder {
  */
 export interface InvalidationContext {
   mutation: string
-  input: any
+  input: unknown
   timestamp: number
   organizationId?: string
 }
