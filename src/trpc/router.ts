@@ -11,6 +11,7 @@
  */
 
 import { initTRPC } from '@trpc/server'
+import superjson from 'superjson'
 import type { ReactiveDb } from '../core/types.js'
 import type { ReactiveFunction } from '../core/function.js'
 import type { ReactiveHandlerContext } from './types.js'
@@ -22,7 +23,9 @@ export interface ReactiveRouterConfig {
 /**
  * Create typed tRPC instance with ReactiveHandlerContext
  */
-const createTypedTRPC = () => initTRPC.context<ReactiveHandlerContext>().create()
+const createTypedTRPC = () => initTRPC.context<ReactiveHandlerContext>().create({
+  transformer: superjson,
+})
 type TypedTRPC = ReturnType<typeof createTypedTRPC>
 
 /**
@@ -36,7 +39,9 @@ export class ReactiveRouter {
 
   constructor(config: ReactiveRouterConfig) {
     this.db = config.db
-    this.t = initTRPC.context<ReactiveHandlerContext>().create()
+    this.t = initTRPC.context<ReactiveHandlerContext>().create({
+      transformer: superjson,
+    })
   }
 
   /**

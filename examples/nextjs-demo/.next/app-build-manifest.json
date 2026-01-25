@@ -1,5 +1,10 @@
 {
   "pages": {
+    "/api/events/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/events/route.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -11,15 +16,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/api/events/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/events/route.js"
-    ],
     "/api/trpc/[trpc]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/trpc/[trpc]/route.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

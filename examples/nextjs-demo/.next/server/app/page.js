@@ -314,7 +314,7 @@ module.exports = require("next/dist/server/app-render/dynamic-access-async-stora
 
 /***/ }),
 
-/***/ "./work-async-storage.external":
+/***/ "../app-render/work-async-storage.external":
 /*!*****************************************************************************!*\
   !*** external "next/dist/server/app-render/work-async-storage.external.js" ***!
   \*****************************************************************************/
@@ -325,7 +325,7 @@ module.exports = require("next/dist/server/app-render/work-async-storage.externa
 
 /***/ }),
 
-/***/ "./work-unit-async-storage.external":
+/***/ "../app-render/work-unit-async-storage.external":
 /*!**********************************************************************************!*\
   !*** external "next/dist/server/app-render/work-unit-async-storage.external.js" ***!
   \**********************************************************************************/
@@ -420,7 +420,7 @@ module.exports = require("util");
 var __webpack_require__ = require("../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, ["vendor-chunks/next@15.5.9_react-dom@18.3.1_react@18.3.1__react@18.3.1","vendor-chunks/@agelum+backend@file+..+.._@trpc+client@10.45.4_@trpc+server@10.45.4__@trpc+server@10.4_a5c7d3704fb6cac8556bc76b9cd91987","vendor-chunks/@trpc+server@10.45.4","vendor-chunks/superjson@2.2.6","vendor-chunks/@trpc+client@10.45.4_@trpc+server@10.45.4","vendor-chunks/@swc+helpers@0.5.15","vendor-chunks/is-what@5.5.0","vendor-chunks/copy-anything@4.0.5"], () => (__webpack_exec__("(rsc)/./node_modules/.pnpm/next@15.5.9_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fpage&page=%2Fpage&appPaths=%2Fpage&pagePath=private-next-app-dir%2Fpage.tsx&appDir=%2FUsers%2Ffacundofierro%2Fgit%2Fbackend%2Fexamples%2Fnextjs-demo%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2FUsers%2Ffacundofierro%2Fgit%2Fbackend%2Fexamples%2Fnextjs-demo&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!")));
+var __webpack_exports__ = __webpack_require__.X(0, ["vendor-chunks/next@15.5.9_react-dom@18.3.1_react@18.3.1__react@18.3.1","vendor-chunks/@swc+helpers@0.5.15","vendor-chunks/@agelum+backend@file+..+.._@trpc+client@10.45.4_@trpc+server@10.45.4__@trpc+server@10.4_a5c7d3704fb6cac8556bc76b9cd91987","vendor-chunks/@trpc+server@10.45.4","vendor-chunks/superjson@2.2.6","vendor-chunks/copy-anything@4.0.5","vendor-chunks/is-what@5.5.0","vendor-chunks/@trpc+client@10.45.4_@trpc+server@10.45.4"], () => (__webpack_exec__("(rsc)/./node_modules/.pnpm/next@15.5.9_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fpage&page=%2Fpage&appPaths=%2Fpage&pagePath=private-next-app-dir%2Fpage.tsx&appDir=%2FUsers%2Ffacundofierro%2Fgit%2Fbackend%2Fexamples%2Fnextjs-demo%2Fsrc%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2FUsers%2Ffacundofierro%2Fgit%2Fbackend%2Fexamples%2Fnextjs-demo&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!")));
 module.exports = __webpack_exports__;
 
 })();
