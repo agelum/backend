@@ -77,7 +77,7 @@ export function PostList({ organizationId }: PostListProps) {
           </button>
         </div>
       </div>
-      
+
       <div className="divide-y divide-gray-200">
         {posts && posts.length > 0 ? (
           posts.map((post: any) => (

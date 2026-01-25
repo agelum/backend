@@ -1,9 +1,26 @@
 "use client";
 
-import { useReactiveConnection } from "@agelum/backend/client";
+import { useEffect, useState } from "react";
 
 export function ConnectionStatus() {
-  const { status, isConnected, reconnect } = useReactiveConnection();
+  const [status, setStatus] = useState<string>("connecting");
+  const [isConnected, setIsConnected] = useState(false);
+  
+  useEffect(() => {
+    // Access the reactive client manager exposed by the library
+    const checkConnection = () => {
+      const manager = (window as any).__reactiveClient__;
+      if (manager?.sseClient) {
+        const connected = manager.sseClient.isConnected();
+        setIsConnected(connected);
+        setStatus(connected ? "connected" : "disconnected");
+      }
+    };
+    
+    checkConnection();
+    const interval = setInterval(checkConnection, 1000);
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <div className="flex items-center gap-2 text-sm">
@@ -13,14 +30,6 @@ export function ConnectionStatus() {
       <span className="text-gray-600">
         SSE: {status}
       </span>
-      {!isConnected && (
-        <button
-          onClick={reconnect}
-          className="text-blue-500 hover:text-blue-600 underline"
-        >
-          Reconnect
-        </button>
-      )}
     </div>
   );
 }

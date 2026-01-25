@@ -79,7 +79,7 @@ export function UserList({ organizationId }: UserListProps) {
           </button>
         </div>
       </div>
-      
+
       <div className="divide-y divide-gray-200">
         {users && users.length > 0 ? (
           users.map((user: any) => (

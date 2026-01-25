@@ -16,7 +16,7 @@ This is a complete demo application showcasing all features of `@agelum/backend`
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - Docker and Docker Compose
 - pnpm (or npm/yarn)
 

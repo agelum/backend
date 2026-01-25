@@ -3,12 +3,17 @@
 import React from "react";
 import { TrpcReactiveProvider } from "@agelum/backend/client";
 import { trpcClient } from "./trpc";
-import { reactiveRelations } from "@/server/db";
 
 interface ProvidersProps {
   children: React.ReactNode;
   organizationId: string;
 }
+
+// Relations config for client-side cache invalidation
+const reactiveRelations = {
+  users: ["posts"],
+  posts: ["users"],
+};
 
 /**
  * Client-side providers for reactive features
